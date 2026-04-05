@@ -1,0 +1,41 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
+import { ScreenConfig, ScreenConfigDocument, ScreenComponent } from './schemas/screen-config.schema';
+
+@Injectable()
+export class ScreenConfigService {
+  private readonly logger = new Logger(ScreenConfigService.name);
+
+  constructor(
+    @InjectModel(ScreenConfig.name)
+    private readonly model: Model<ScreenConfigDocument>,
+  ) {}
+
+  async getActiveScreen(screenId: string): Promise<ScreenConfig | null> {
+    return this.model
+      .findOne({ screen_id: screenId, is_active: true })
+      .lean()
+      .exec();
+  }
+
+  async upsert(screenId: string, version: string, components: ScreenComponent[]): Promise<ScreenConfig> {
+    const result = await this.model.findOneAndUpdate(
+      { screen_id: screenId },
+      { screen_id: screenId, version, components, is_active: true },
+      { upsert: true, new: true },
+    ).lean().exec();
+
+    this.logger.log(`Screen config upserted: ${screenId} v${version}`);
+    return result as ScreenConfig;
+  }
+
+  async listAll(): Promise<ScreenConfig[]> {
+    return this.model.find({}).lean().exec();
+  }
+
+  async deactivate(screenId: string): Promise<void> {
+    await this.model.updateOne({ screen_id: screenId }, { is_active: false });
+  }
+}
