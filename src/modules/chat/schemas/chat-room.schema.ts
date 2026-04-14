@@ -7,7 +7,7 @@ export type ChatRoomDocument = ChatRoom & Document;
 export class ChatRoom {
   _id: Types.ObjectId;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   service_request_id: string;
 
   @Prop({ required: true, index: true })
