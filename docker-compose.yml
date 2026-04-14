@@ -1,21 +1,19 @@
 services:
-  api:
+  bff:
     depends_on:
-      database_postgres:
-        condition: service_healthy
       database_mongo:
+        condition: service_started
+      cache_redis:
         condition: service_started
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: ${PROJECT_NAME}_api
+    container_name: ${PROJECT_NAME}_bff
     environment:
       - NODE_ENV=development
-      - DATABASE_POSTGRES_HOST=database_postgres
-      - DATABASE_MONGO_HOST=database_mongo
       - MONGO_URI=mongodb://database_mongo:27017/backend_database_mongo
       - CACHE_REDIS_HOST=cache_redis
-      - QUEUE_RABBITMQ_HOST=queue_rabbitmq
+      - API_BASE_URL=http://host.docker.internal:3000
       - KEYCLOAK_BASE_URL=http://keycloak:8080
     env_file:
       - .env
@@ -28,25 +26,7 @@ services:
     stdin_open: true
     tty: true
 
-  ### DATABASE SERVICE
-  database_postgres:
-    image: postgres:18
-    container_name: ${PROJECT_NAME}_database_postgres
-    environment:
-      - POSTGRES_USER=${DATABASE_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${DATABASE_POSTGRES_PASSWORD}
-      - POSTGRES_DB=${DATABASE_POSTGRES_NAME}
-    ports:
-      - '${DATABASE_POSTGRES_PORT}:5432'
-    volumes:
-      - database_postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_POSTGRES_USER}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
+  ### MONGODB
   database_mongo:
     image: mongo:7
     container_name: ${PROJECT_NAME}_database_mongo
@@ -57,6 +37,7 @@ services:
       - database_mongo_data:/data/db
       - database_mongo_config:/data/configdb
 
+  ### REDIS (cache + Pub/Sub)
   cache_redis:
     image: redis:7
     container_name: ${PROJECT_NAME}_cache_redis
@@ -66,18 +47,7 @@ services:
     volumes:
       - cache_redis_data:/data
 
-  queue_rabbitmq:
-    image: rabbitmq:3.9-management
-    container_name: ${PROJECT_NAME}_queue_rabbitmq
-    ports:
-      - '${QUEUE_RABBITMQ_PORT}:5672'
-      - '${QUEUE_RABBITMQ_MANAGEMENT_PORT}:15672'
-    environment:
-      RABBITMQ_DEFAULT_USER: ${QUEUE_RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${QUEUE_RABBITMQ_PASS}
-    volumes:
-      - queue_rabbitmq_data:/var/lib/rabbitmq
-
+  ### KEYCLOAK
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
     container_name: ${PROJECT_NAME}_keycloak
@@ -96,7 +66,6 @@ services:
     depends_on:
       database_keycloak:
         condition: service_healthy
-    # start Keycloak in dev mode and import realms placed under /opt/keycloak/data/import
     command: ['start-dev', '--import-realm']
     volumes:
       - keycloak_data:/opt/keycloak/data
@@ -117,7 +86,7 @@ services:
       timeout: 5s
       retries: 5
 
-  ### SONAR_QUBE SERVICES (Optional for worker)
+  ### SONARQUBE (opcional)
   sonarqube:
     image: sonarqube:community
     container_name: ${PROJECT_NAME}_sonarqube
@@ -153,10 +122,8 @@ volumes:
   sonarqube_temp:
   sonar_database:
   sonar_database_postgres_data:
-  database_postgres_data:
   database_mongo_data:
   database_mongo_config:
   cache_redis_data:
-  queue_rabbitmq_data:
   keycloak_data:
   database_keycloak_data:

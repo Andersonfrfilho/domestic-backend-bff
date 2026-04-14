@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import type { CreateRoomDto, SendMessageDto } from './chat.service';
 import { ChatService } from './chat.service';
+import { CHAT_SERVICE } from './chat.token';
 
 @ApiTags('Chat')
 @ApiSecurity('kong-user-id')
 @Controller('bff/chat')
 export class ChatController {
-  constructor(private readonly service: ChatService) {}
+  constructor(@Inject(CHAT_SERVICE) private readonly service: ChatService) {}
 
   @Post('rooms')
   @ApiOperation({ summary: 'Cria sala de chat vinculada a uma service_request' })

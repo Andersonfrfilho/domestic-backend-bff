@@ -1,0 +1,1 @@
+export const BFF_CACHE_SERVICE = 'BFF_CACHE_SERVICE';

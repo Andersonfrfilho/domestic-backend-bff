@@ -2,7 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { ChatService } from './chat.service';
 import { ChatMessage } from './schemas/chat-message.schema';
@@ -51,7 +51,7 @@ describe('ChatService', () => {
         ChatService,
         { provide: getModelToken(ChatRoom.name), useValue: roomModel },
         { provide: getModelToken(ChatMessage.name), useValue: makeMessageModel() },
-        { provide: BffCacheService, useValue: cache },
+        { provide: BFF_CACHE_SERVICE, useValue: cache },
       ],
     }).compile();
 

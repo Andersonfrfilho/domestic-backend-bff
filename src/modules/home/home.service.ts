@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 
-import { ApiClientService } from '@modules/shared/api-client/api-client.service';
-import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
+import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 
 import type { FeaturedCategory, FeaturedProvider, HomeResponseDto, ScreenComponentData } from './dtos/home-response.dto';
 
@@ -14,8 +15,11 @@ export class HomeService {
   private readonly logger = new Logger(HomeService.name);
 
   constructor(
+    @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
+    @Inject(BFF_CACHE_SERVICE)
     private readonly cache: BffCacheService,
+    @Inject(SCREEN_CONFIG_SERVICE)
     private readonly screenConfig: ScreenConfigService,
   ) {}
 

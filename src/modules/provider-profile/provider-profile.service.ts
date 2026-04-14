@@ -1,7 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 export interface ProviderProfileResponse {
   id: string;
@@ -33,7 +35,9 @@ export class ProviderProfileService {
   private readonly logger = new Logger(ProviderProfileService.name);
 
   constructor(
+    @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
+    @Inject(BFF_CACHE_SERVICE)
     private readonly cache: BffCacheService,
   ) {}
 

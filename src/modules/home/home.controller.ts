@@ -1,12 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { HomeService } from './home.service';
+import { HOME_SERVICE } from './home.token';
 
 @ApiTags('Home')
 @Controller('bff/home')
 export class HomeController {
-  constructor(private readonly service: HomeService) {}
+  constructor(@Inject(HOME_SERVICE) private readonly service: HomeService) {}
 
   @Get()
   @ApiOperation({

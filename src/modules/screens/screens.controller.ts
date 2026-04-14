@@ -1,13 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Put } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
+import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 import { ScreenComponent } from '@modules/shared/screen/schemas/screen-config.schema';
 
 @ApiTags('Screens')
 @Controller('bff/screens')
 export class ScreensController {
-  constructor(private readonly screenConfig: ScreenConfigService) {}
+  constructor(
+    @Inject(SCREEN_CONFIG_SERVICE)
+    private readonly screenConfig: ScreenConfigService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lista todas as configurações de tela' })

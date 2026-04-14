@@ -1,12 +1,16 @@
-import { Controller, Get, Headers, Param } from '@nestjs/common';
+import { Controller, Get, Headers, Inject, Param } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { ProviderProfileService } from './provider-profile.service';
+import { PROVIDER_PROFILE_SERVICE } from './provider-profile.token';
 
 @ApiTags('Provider Profile')
 @Controller('bff/providers')
 export class ProviderProfileController {
-  constructor(private readonly service: ProviderProfileService) {}
+  constructor(
+    @Inject(PROVIDER_PROFILE_SERVICE)
+    private readonly service: ProviderProfileService,
+  ) {}
 
   @Get(':id/profile')
   @ApiOperation({

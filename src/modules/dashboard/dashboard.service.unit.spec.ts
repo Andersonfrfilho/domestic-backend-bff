@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { ApiClientService } from '@modules/shared/api-client/api-client.service';
-import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { DashboardService } from './dashboard.service';
 
@@ -19,8 +19,8 @@ describe('DashboardService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DashboardService,
-        { provide: ApiClientService, useValue: api },
-        { provide: BffCacheService, useValue: cache },
+        { provide: API_CLIENT_SERVICE, useValue: api },
+        { provide: BFF_CACHE_SERVICE, useValue: cache },
       ],
     }).compile();
 

@@ -1,8 +1,9 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
@@ -24,6 +25,7 @@ export class ChatService {
     private readonly roomModel: Model<ChatRoomDocument>,
     @InjectModel(ChatMessage.name)
     private readonly messageModel: Model<ChatMessageDocument>,
+    @Inject(BFF_CACHE_SERVICE)
     private readonly cache: BffCacheService,
   ) {}
 

@@ -1,10 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
+import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 
 import { HomeService } from './home.service';
+import { HOME_SERVICE } from './home.token';
 
 const makeApi = () => ({
   get: jest.fn(),
@@ -31,9 +35,9 @@ describe('HomeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HomeService,
-        { provide: ApiClientService, useValue: api },
-        { provide: BffCacheService, useValue: cache },
-        { provide: ScreenConfigService, useValue: screen },
+        { provide: API_CLIENT_SERVICE, useValue: api },
+        { provide: BFF_CACHE_SERVICE, useValue: cache },
+        { provide: SCREEN_CONFIG_SERVICE, useValue: screen },
       ],
     }).compile();
 

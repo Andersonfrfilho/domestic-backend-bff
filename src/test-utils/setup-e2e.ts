@@ -15,7 +15,6 @@ process.env.NODE_ENV = 'test';
 // Log de verificação
 console.log('✅ E2E Setup: Environment loaded');
 console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`   DATABASE: ${process.env.DATABASE_POSTGRES_NAME}`);
 console.log(`   PORT: ${process.env.PORT}`);
 console.log(`   MONGO_URI: ${process.env.MONGO_URI ? '✓ Configured' : '✗ Not configured'}`);
 

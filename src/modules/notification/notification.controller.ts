@@ -1,13 +1,14 @@
-import { Body, Controller, Get, Headers, Param, Put } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Param, Put } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 
 @ApiTags('Notifications')
 @ApiSecurity('kong-user-id')
 @Controller('bff/notifications')
 export class NotificationController {
-  constructor(private readonly api: ApiClientService) {}
+  constructor(@Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService) {}
 
   @Get()
   @ApiOperation({ summary: 'Lista notificações do usuário autenticado (proxy → API)' })

@@ -15,11 +15,11 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 // Configurações específicas para testes E2E
 process.env.JEST_WORKER_ID = process.env.JEST_WORKER_ID || '1';
 
-// Log para debug (remover em produção)
+// Log para debug
 console.log('🌐 E2E Test Environment Loaded');
 console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`   PORT: ${process.env.PORT}`);
-console.log(`   DATABASE: ${process.env.DATABASE_POSTGRES_NAME}`);
+console.log(`   MONGO_URI: ${process.env.MONGO_URI ? '✓ Configured' : '✗ Not configured'}`);
 
 export default {
   moduleFileExtensions: ['js', 'json', 'ts'],
@@ -52,7 +52,6 @@ export default {
     '!**/*.module.(ts|js)',
     '!**/*.dto.(ts|js)',
     '!**/*.test.ts',
-    '!**/migrations/**',
   ],
   coveragePathIgnorePatterns: ['/node_modules/', '/dist/', '/.history/', '/coverage/', '/logs/'],
   coverageDirectory: './coverage/e2e',
@@ -67,6 +66,6 @@ export default {
   coverageProvider: 'v8',
   displayName: '🌐 E2E Tests',
   testTimeout: 60000, // 60 segundos para dar tempo de inicializar aplicação
-  setupFilesAfterEnv: ['<rootDir>/test/e2e/setup-e2e.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/test-utils/setup-e2e.ts'],
   openHandlesTimeout: 60000,
 } as Config.InitialOptions;

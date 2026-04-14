@@ -1,4 +1,4 @@
-import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -12,6 +12,7 @@ import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { ChatService } from './chat.service';
 
@@ -26,7 +27,9 @@ export class ChatGateway
   private subscriber: Redis;
 
   constructor(
+    @Inject(CHAT_SERVICE)
     private readonly chatService: ChatService,
+    @Inject(BFF_CACHE_SERVICE)
     private readonly cache: BffCacheService,
   ) {}
 

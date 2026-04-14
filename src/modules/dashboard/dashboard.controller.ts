@@ -1,13 +1,14 @@
-import { Controller, Get, Headers } from '@nestjs/common';
+import { Controller, Get, Headers, Inject } from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { DashboardService } from './dashboard.service';
+import { DASHBOARD_SERVICE } from './dashboard.token';
 
 @ApiTags('Dashboard')
 @ApiSecurity('kong-user-id')
 @Controller('bff/dashboard')
 export class DashboardController {
-  constructor(private readonly service: DashboardService) {}
+  constructor(@Inject(DASHBOARD_SERVICE) private readonly service: DashboardService) {}
 
   @Get('contractor')
   @ApiOperation({

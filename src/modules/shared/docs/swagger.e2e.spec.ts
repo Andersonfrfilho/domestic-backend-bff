@@ -2,30 +2,19 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { SwaggerModule } from '@nestjs/swagger';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { EnvironmentProviderInterface } from '../../src/config';
-import { ENVIRONMENT_SERVICE_PROVIDER } from '../../src/config/config.token';
-import { swaggerConfig } from '../../src/config/swagger.config';
-import { docsFactory } from '@modules/shared/infrastructure/interceptors/docs';
-import { LOG_PROVIDER } from '@modules/shared/infrastructure/providers/log/log.token';
-import { AppModule } from '../../src/app.module';
+import { AppModule } from '@app/app.module';
+import { EnvironmentProviderInterface } from '@config/index';
+import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
+import { swaggerConfig } from '@config/swagger.config';
+import { docsFactory } from '@modules/shared/docs/docs.factory';
 
 describe('Swagger Documentation (e2e)', () => {
   let app: NestFastifyApplication;
 
-  const mockLogProvider = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  };
-
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      .overrideProvider(LOG_PROVIDER)
-      .useValue(mockLogProvider)
-      .compile();
+    }).compile();
 
     app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
@@ -40,7 +29,6 @@ describe('Swagger Documentation (e2e)', () => {
     try {
       await app.close();
     } catch (error) {
-      // Silently ignore DataSource not found errors (TypeORM cleanup issue with MONGO_URI)
       if ((error as Error).message?.includes('DataSource')) {
         console.warn('⚠️  DataSource cleanup error (expected with MONGO_URI)');
       } else {
