@@ -9,14 +9,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build && \
-  npx tsc src/modules/shared/providers/database/migrations/*.ts \
-  --outDir dist/modules/shared/providers/database/migrations \
-  --module commonjs \
-  --target es2020 \
-  --esModuleInterop \
-  --skipLibCheck \
-  --strict false
+RUN npm run build
 
 # ===== STAGE 2: Runtime (Development) =====
 FROM node:25-alpine
@@ -29,7 +22,6 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copia apenas arquivos necessários
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/package*.json ./
 
 # Copia apenas os configs necessários para dev

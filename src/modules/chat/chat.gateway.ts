@@ -15,6 +15,7 @@ import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { ChatService } from './chat.service';
+import { CHAT_SERVICE } from './chat.token';
 
 @WebSocketGateway({ namespace: '/chat', cors: { origin: (process.env.WS_CORS_ORIGINS ?? '*').split(',') } })
 export class ChatGateway
