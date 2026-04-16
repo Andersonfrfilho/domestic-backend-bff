@@ -75,7 +75,7 @@ export class ChatGateway
   ) {
     const userId: string = client.data['userId'];
     try {
-      await this.chatService.getRoom(payload.room_id, userId);
+      await this.chatService.getRoom({ roomId: payload.room_id, userId });
       await client.join(payload.room_id);
       this.server.to(payload.room_id).emit('user_joined', { room_id: payload.room_id, user_id: userId });
     } catch {
@@ -100,7 +100,7 @@ export class ChatGateway
   ) {
     const userId: string = client.data['userId'];
     try {
-      await this.chatService.sendMessage(payload.room_id, userId, { content: payload.content });
+      await this.chatService.sendMessage({ roomId: payload.room_id, senderId: userId, dto: { content: payload.content } });
       // A mensagem já é distribuída via Redis Pub/Sub → onModuleInit listener
     } catch (err) {
       client.emit('error', { code: 'ERROR', message: String(err) });
@@ -114,7 +114,7 @@ export class ChatGateway
   ) {
     const userId: string = client.data['userId'];
     try {
-      await this.chatService.markRead(payload.room_id, userId);
+      await this.chatService.markRead({ roomId: payload.room_id, userId });
     } catch (err) {
       client.emit('error', { code: 'ERROR', message: String(err) });
     }

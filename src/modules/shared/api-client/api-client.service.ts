@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import type { ApiClientGetParams, ApiClientPostParams, ApiClientPutParams } from './api-client.types';
+
 @Injectable()
 export class ApiClientService {
   private readonly logger = new Logger(ApiClientService.name);
@@ -11,7 +13,7 @@ export class ApiClientService {
     this.timeoutMs = Number(process.env.API_TIMEOUT_MS ?? 5000);
   }
 
-  async get<T>(path: string, headers?: Record<string, string>): Promise<T> {
+  async get<T>({ path, headers }: ApiClientGetParams): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -33,7 +35,7 @@ export class ApiClientService {
     }
   }
 
-  async post<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
+  async post<T>({ path, body, headers }: ApiClientPostParams): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -57,7 +59,7 @@ export class ApiClientService {
     }
   }
 
-  async put<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
+  async put<T>({ path, body, headers }: ApiClientPutParams): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);

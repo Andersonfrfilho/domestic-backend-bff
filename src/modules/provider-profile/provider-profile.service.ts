@@ -4,31 +4,31 @@ import { ApiClientService } from '@modules/shared/api-client/api-client.service'
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
+import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 
-export interface ProviderProfileResponse {
-  id: string;
-  business_name: string;
-  description: string | null;
-  average_rating: number;
-  review_count: number;
-  is_available: boolean;
-  verification_status: string;
-  services: Array<{
-    id: string;
-    name: string;
-    category: { id: string; name: string };
-    price_base: number;
-    price_type: string;
-  }>;
-  work_locations: Array<{ city: string; state: string; is_primary: boolean }>;
-  recent_reviews: Array<{
-    rating: number;
-    comment: string | null;
-    contractor_name: string;
-    service_name: string;
-    created_at: string;
-  }>;
-}
+import type {
+  FetchProviderParams,
+  FetchProviderResult,
+  FetchReviewsParams,
+  FetchReviewsResult,
+  GetProfileParams,
+  GetProfileResult,
+  ProviderProfileResponse,
+} from './provider-profile.types';
+
+export type { ProviderProfileResponse };
+
+const asString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : fallback;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'bigint') return value.toString();
+  return fallback;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+const toRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
 
 @Injectable()
 export class ProviderProfileService {
@@ -41,66 +41,96 @@ export class ProviderProfileService {
     private readonly cache: BffCacheService,
   ) {}
 
-  async getProfile(providerId: string, userHeaders: Record<string, string>): Promise<ProviderProfileResponse> {
-    const cacheKey = `bff:provider-profile:${providerId}`;
+  async getProfile({ providerId, headers }: GetProfileParams): GetProfileResult {
+    const cacheKey = CACHE_KEYS.PROVIDER_PROFILE(providerId);
     const cached = await this.cache.get<ProviderProfileResponse>(cacheKey);
     if (cached) return cached;
 
     const [provider, reviews] = await Promise.all([
-      this.fetchProvider(providerId, userHeaders),
-      this.fetchReviews(providerId, userHeaders),
+      this.fetchProvider({ id: providerId, headers }),
+      this.fetchReviews({ providerId, headers }),
     ]);
 
     if (!provider) throw new NotFoundException(`Provider ${providerId} not found`);
 
     const response: ProviderProfileResponse = {
-      id: String(provider['id'] ?? ''),
-      business_name: String(provider['business_name'] ?? ''),
+      id: asString(provider['id']),
+      businessName: asString(provider['business_name']),
       description: (provider['description'] as string | null) ?? null,
-      average_rating: Number(provider['average_rating'] ?? 0),
-      review_count: Number(provider['review_count'] ?? 0),
-      is_available: Boolean(provider['is_available'] ?? false),
-      verification_status: String(provider['verification_status'] ?? 'PENDING'),
-      services: (provider['services'] as ProviderProfileResponse['services']) ?? [],
-      work_locations: (provider['work_locations'] as ProviderProfileResponse['work_locations']) ?? [],
-      recent_reviews: reviews,
+      averageRating: Number(provider['average_rating'] ?? 0),
+      reviewCount: Number(provider['review_count'] ?? 0),
+      isAvailable: Boolean(provider['is_available'] ?? false),
+      verificationStatus: asString(provider['verification_status'], 'PENDING'),
+      services: Array.isArray(provider['services'])
+        ? provider['services'].map((s: unknown) => {
+            const svc = toRecord(s);
+            const category = toRecord(svc['category']);
+            return {
+              id: asString(svc['id']),
+              name: asString(svc['name']),
+              category: {
+                id: asString(category['id']),
+                name: asString(category['name']),
+              },
+              priceBase: Number(svc['price_base'] ?? 0),
+              priceType: asString(svc['price_type']),
+            };
+          })
+        : [],
+      workLocations: Array.isArray(provider['work_locations'])
+        ? provider['work_locations'].map((w: unknown) => {
+            const loc = toRecord(w);
+            return {
+              city: asString(loc['city']),
+              state: asString(loc['state']),
+              isPrimary: Boolean(loc['is_primary'] ?? false),
+            };
+          })
+        : [],
+      recentReviews: reviews,
     };
 
     const ttl = Number(process.env.CACHE_TTL_PROVIDER_PROFILE ?? 180);
-    await this.cache.set(cacheKey, response, ttl);
+    await this.cache.set({ key: cacheKey, value: response, ttlSeconds: ttl });
 
     return response;
   }
 
-  private async fetchProvider(id: string, headers: Record<string, string>): Promise<Record<string, unknown> | null> {
+  private async fetchProvider({ id, headers }: FetchProviderParams): FetchProviderResult {
     try {
-      return await this.api.get<Record<string, unknown>>(`/api/v1/providers/${id}`, headers);
+      return await this.api.get<Record<string, unknown>>({
+        path: `/api/v1/providers/${id}`,
+        headers,
+      });
     } catch (err) {
-      this.logger.warn(`Failed to fetch provider ${id}`, err);
+      const errMsg = err instanceof Error ? `: ${err.message}` : '';
+      this.logger.warn(`Failed to fetch provider ${id}${errMsg}`);
       return null;
     }
   }
 
-  private async fetchReviews(
-    providerId: string,
-    headers: Record<string, string>,
-  ): Promise<ProviderProfileResponse['recent_reviews']> {
+  private async fetchReviews({ providerId, headers }: FetchReviewsParams): FetchReviewsResult {
     try {
-      const data = await this.api.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(
-        `/api/v1/reviews/provider/${providerId}?limit=5&sort=created_at`,
+      const data = await this.api.get<
+        { data?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >({
+        path: `/api/v1/reviews/provider/${providerId}?limit=5&sort=created_at`,
         headers,
-      );
-      const items = Array.isArray(data) ? data : ((data as { data?: Record<string, unknown>[] }).data ?? []);
+      });
+      const items = Array.isArray(data)
+        ? data
+        : ((data as { data?: Record<string, unknown>[] }).data ?? []);
 
       return items.map((r) => ({
         rating: Number(r['rating'] ?? 0),
         comment: (r['comment'] as string | null) ?? null,
-        contractor_name: String(r['contractor_name'] ?? 'Anônimo'),
-        service_name: String(r['service_name'] ?? ''),
-        created_at: String(r['created_at'] ?? ''),
+        contractorName: asString(r['contractor_name'], 'Anônimo'),
+        serviceName: asString(r['service_name']),
+        createdAt: asString(r['created_at']),
       }));
     } catch (err) {
-      this.logger.warn(`Failed to fetch reviews for provider ${providerId}`, err);
+      const errMsg = err instanceof Error ? `: ${err.message}` : '';
+      this.logger.warn(`Failed to fetch reviews for provider ${providerId}${errMsg}`);
       return [];
     }
   }

@@ -36,6 +36,23 @@ $ npm run test:all
 $ npm run test:cov
 ```
 
+## API conventions (rules)
+
+### JSON payloads
+
+- **All response payload keys are returned in** `camelCase`.
+  - This includes nested objects and entities.
+  - MongoDB `_id` is exposed as `id`.
+
+### Pagination
+
+For paginated endpoints, responses include `meta` and `links`:
+
+- `meta`: `{ page, limit, total, totalPages }`
+- `links`: `{ first, last, next, previous }`
+
+Each link preserves the current filters from the querystring.
+
 ## Environment Files
 
 O projeto utiliza diferentes arquivos de ambiente para diferentes contextos:

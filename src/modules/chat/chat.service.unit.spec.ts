@@ -60,7 +60,7 @@ describe('ChatService', () => {
 
   it('createRoom returns existing room if already exists', async () => {
     await buildModule();
-    const result = await service.createRoom({ service_request_id: 'sr-1' }, 'user-contractor', 'user-provider');
+    const result = await service.createRoom({ dto: { service_request_id: 'sr-1' }, contractorId: 'user-contractor', providerId: 'user-provider' });
     expect(roomModel.create).not.toHaveBeenCalled();
     expect(result).toMatchObject({ service_request_id: 'sr-1' });
   });
@@ -68,29 +68,35 @@ describe('ChatService', () => {
   it('createRoom creates new room if not exists', async () => {
     await buildModule(null);
     roomModel.findOne.mockReturnValue({ lean: () => ({ exec: () => Promise.resolve(null) }) });
-    await service.createRoom({ service_request_id: 'sr-new' }, 'user-contractor', 'user-provider');
+    await service.createRoom({ dto: { service_request_id: 'sr-new' }, contractorId: 'user-contractor', providerId: 'user-provider' });
     expect(roomModel.create).toHaveBeenCalled();
   });
 
   it('getRoom throws NotFoundException if room does not exist', async () => {
     await buildModule(null);
-    await expect(service.getRoom('room-99', 'user-contractor')).rejects.toThrow(NotFoundException);
+    await expect(service.getRoom({ roomId: 'room-99', userId: 'user-contractor' })).rejects.toThrow(NotFoundException);
   });
 
   it('getRoom throws ForbiddenException if user is not a participant', async () => {
     await buildModule();
-    await expect(service.getRoom('room-1', 'user-stranger')).rejects.toThrow(ForbiddenException);
+    await expect(service.getRoom({ roomId: 'room-1', userId: 'user-stranger' })).rejects.toThrow(ForbiddenException);
   });
 
   it('sendMessage publishes to Redis after persisting', async () => {
     await buildModule();
-    await service.sendMessage('room-1', 'user-contractor', { content: 'Hello!' });
-    expect(cache.publish).toHaveBeenCalledWith('chat:room-1', expect.stringContaining('message_received'));
+    await service.sendMessage({ roomId: 'room-1', senderId: 'user-contractor', dto: { content: 'Hello!' } });
+    expect(cache.publish).toHaveBeenCalledWith({
+      channel: 'chat:room-1',
+      message: expect.stringContaining('message_received'),
+    });
   });
 
   it('markRead publishes messages_read event to Redis', async () => {
     await buildModule();
-    await service.markRead('room-1', 'user-contractor');
-    expect(cache.publish).toHaveBeenCalledWith('chat:room-1', expect.stringContaining('messages_read'));
+    await service.markRead({ roomId: 'room-1', userId: 'user-contractor' });
+    expect(cache.publish).toHaveBeenCalledWith({
+      channel: 'chat:room-1',
+      message: expect.stringContaining('messages_read'),
+    });
   });
 });

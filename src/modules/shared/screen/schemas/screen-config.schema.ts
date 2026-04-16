@@ -23,6 +23,23 @@ export type DataSource =
   | 'search_filters'
   | 'static';
 
+/** Tipo de ação ao tocar no componente (padrão SDUI Airbnb/Netflix) */
+export type ComponentActionType = 'navigate' | 'open_modal' | 'external_link' | 'none';
+
+/**
+ * Ação executada ao tocar em um componente ou item de lista.
+ * `route` suporta templates com parâmetros do item: `/providers/{id}`
+ */
+export interface ComponentAction {
+  type: ComponentActionType;
+  /** Rota interna do app (navigate / open_modal). Suporta `{field}` do item de dados. */
+  route?: string;
+  /** URL externa (external_link). */
+  url?: string;
+  /** Parâmetros extras a injetar na rota além dos do item de dados. */
+  params?: Record<string, string>;
+}
+
 @Schema({ _id: false })
 export class ScreenComponent {
   @Prop({ required: true })
@@ -46,6 +63,13 @@ export class ScreenComponent {
   /** Visível ou oculto no frontend */
   @Prop({ default: true })
   visible: boolean;
+
+  /**
+   * Ação ao tocar no componente (ou em itens da lista do componente).
+   * null = componente não é interativo.
+   */
+  @Prop({ type: Object, default: null })
+  action: ComponentAction | null;
 }
 
 export const ScreenComponentSchema = SchemaFactory.createForClass(ScreenComponent);

@@ -29,49 +29,61 @@ describe('DashboardService', () => {
 
   describe('getContractorDashboard', () => {
     it('returns cached response', async () => {
-      const cached = { active_requests: [], pending_requests: [], recent_history: [], unread_notifications: 0 };
+      const cached = {
+        activeRequests: [],
+        pendingRequests: [],
+        recentHistory: [],
+        unreadNotifications: 0,
+      };
       cache.get.mockResolvedValue(cached);
-      const result = await service.getContractorDashboard('user-1', HEADERS);
+      const result = await service.getContractorDashboard({ userId: 'user-1', headers: HEADERS });
       expect(result).toBe(cached);
       expect(api.get).not.toHaveBeenCalled();
     });
 
     it('separates active and pending requests', async () => {
-      api.get.mockImplementation((path: string) => {
+      api.get.mockImplementation(({ path }: { path: string }) => {
         if (path.includes('PENDING,ACCEPTED'))
-          return Promise.resolve({ data: [{ id: 'r1', status: 'ACCEPTED' }, { id: 'r2', status: 'PENDING' }] });
-        if (path.includes('unread-count'))
-          return Promise.resolve({ count: 3 });
+          return Promise.resolve({
+            data: [
+              { id: 'r1', status: 'ACCEPTED' },
+              { id: 'r2', status: 'PENDING' },
+            ],
+          });
+        if (path.includes('unread-count')) return Promise.resolve({ count: 3 });
         return Promise.resolve({ data: [] });
       });
 
-      const result = await service.getContractorDashboard('user-1', HEADERS);
-      expect(result.active_requests).toHaveLength(1);
-      expect(result.pending_requests).toHaveLength(1);
-      expect(result.unread_notifications).toBe(3);
+      const result = await service.getContractorDashboard({ userId: 'user-1', headers: HEADERS });
+      expect(result.activeRequests).toHaveLength(1);
+      expect(result.pendingRequests).toHaveLength(1);
+      expect(result.unreadNotifications).toBe(3);
     });
   });
 
   describe('getProviderDashboard', () => {
     it('returns provider stats from API', async () => {
-      api.get.mockImplementation((path: string) => {
+      api.get.mockImplementation(({ path }: { path: string }) => {
         if (path.includes('/providers/me'))
-          return Promise.resolve({ average_rating: 4.8, review_count: 10, verification_status: 'APPROVED' });
-        if (path.includes('unread-count'))
-          return Promise.resolve({ count: 1 });
+          return Promise.resolve({
+            average_rating: 4.8,
+            review_count: 10,
+            verification_status: 'APPROVED',
+          });
+        if (path.includes('unread-count')) return Promise.resolve({ count: 1 });
         return Promise.resolve({ data: [] });
       });
 
-      const result = await service.getProviderDashboard('user-1', HEADERS);
-      expect(result.average_rating).toBe(4.8);
-      expect(result.verification_status).toBe('APPROVED');
+      const result = await service.getProviderDashboard({ userId: 'user-1', headers: HEADERS });
+      expect(result.averageRating).toBe(4.8);
+      expect(result.verificationStatus).toBe('APPROVED');
     });
 
     it('falls back to defaults when provider stats fail', async () => {
       api.get.mockRejectedValue(new Error('timeout'));
-      const result = await service.getProviderDashboard('user-1', HEADERS);
-      expect(result.average_rating).toBe(0);
-      expect(result.verification_status).toBe('PENDING');
+      const result = await service.getProviderDashboard({ userId: 'user-1', headers: HEADERS });
+      expect(result.averageRating).toBe(0);
+      expect(result.verificationStatus).toBe('PENDING');
     });
   });
 });

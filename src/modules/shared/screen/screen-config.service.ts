@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { ScreenConfig, ScreenConfigDocument, ScreenComponent } from './schemas/screen-config.schema';
+import { ScreenConfig, ScreenConfigDocument } from './schemas/screen-config.schema';
+import type { ScreenConfigUpsertParams, ScreenConfigUpsertResult } from './screen-config.types';
 
 @Injectable()
 export class ScreenConfigService {
@@ -20,7 +21,7 @@ export class ScreenConfigService {
       .exec();
   }
 
-  async upsert(screenId: string, version: string, components: ScreenComponent[]): Promise<ScreenConfig> {
+  async upsert({ screenId, version, components }: ScreenConfigUpsertParams): ScreenConfigUpsertResult {
     const result = await this.model.findOneAndUpdate(
       { screen_id: screenId },
       { screen_id: screenId, version, components, is_active: true },

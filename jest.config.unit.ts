@@ -42,6 +42,7 @@ const config: Config.InitialOptions = {
     '!**/*.module.(ts|js)',
     '!**/*.dto.(ts|js)',
     '!**/*.test.ts',
+    '!**/*.spec.ts',
     '!**/*.types.(ts|js)',
     '!**/*.type.(ts|js)',
     '!**/types/**',

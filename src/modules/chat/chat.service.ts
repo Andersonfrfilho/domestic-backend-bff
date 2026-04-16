@@ -5,16 +5,22 @@ import { Model, Types } from 'mongoose';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
-import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
+import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
+import type {
+  CreateRoomParams,
+  CreateRoomResult,
+  GetMessagesParams,
+  GetMessagesResult,
+  GetRoomParams,
+  GetRoomResult,
+  MarkReadParams,
+  MarkReadResult,
+  SendMessageParams,
+  SendMessageResult,
+} from './chat.types';
 
-export interface CreateRoomDto {
-  service_request_id: string;
-}
-
-export interface SendMessageDto {
-  content: string;
-}
+export type { CreateRoomDto, SendMessageDto } from './chat.types';
 
 @Injectable()
 export class ChatService {
@@ -29,13 +35,13 @@ export class ChatService {
     private readonly cache: BffCacheService,
   ) {}
 
-  async createRoom(dto: CreateRoomDto, contractorId: string, providerId: string) {
+  async createRoom({ dto, contractorId, providerId }: CreateRoomParams): CreateRoomResult {
     const existing = await this.roomModel
       .findOne({ service_request_id: dto.service_request_id })
       .lean()
       .exec();
 
-    if (existing) return existing;
+    if (existing) return existing as unknown as Record<string, unknown>;
 
     const room = await this.roomModel.create({
       service_request_id: dto.service_request_id,
@@ -43,7 +49,7 @@ export class ChatService {
       provider_id: providerId,
     });
 
-    return room.toObject();
+    return room.toObject() as unknown as Record<string, unknown>;
   }
 
   async listRooms(userId: string) {
@@ -54,14 +60,14 @@ export class ChatService {
       .exec();
   }
 
-  async getRoom(roomId: string, userId: string) {
+  async getRoom({ roomId, userId }: GetRoomParams): GetRoomResult {
     const room = await this.roomModel.findById(roomId).lean().exec();
     if (!room) throw new NotFoundException('Room not found');
     this.assertParticipant(room, userId);
-    return room;
+    return room as unknown as Record<string, unknown>;
   }
 
-  async getMessages(roomId: string, userId: string, page = 1, limit = 50) {
+  async getMessages({ roomId, userId, page = 1, limit = 50 }: GetMessagesParams): GetMessagesResult {
     const room = await this.roomModel.findById(roomId).lean().exec();
     if (!room) throw new NotFoundException('Room not found');
     this.assertParticipant(room, userId);
@@ -79,12 +85,12 @@ export class ChatService {
     ]);
 
     return {
-      data: data.reverse(),
+      data: data.reverse() as unknown as Record<string, unknown>[],
       meta: { page, limit, total, total_pages: Math.ceil(total / limit) },
     };
   }
 
-  async sendMessage(roomId: string, senderId: string, dto: SendMessageDto) {
+  async sendMessage({ roomId, senderId, dto }: SendMessageParams): SendMessageResult {
     const room = await this.roomModel.findById(roomId).lean().exec();
     if (!room) throw new NotFoundException('Room not found');
     this.assertParticipant(room, senderId);
@@ -108,18 +114,24 @@ export class ChatService {
     const msg = message.toObject();
 
     // Publica no Redis para todos os nós BFF
-    await this.cache.publish(
-      `chat:${roomId}`,
-      JSON.stringify({
+    await this.cache.publish({
+      channel: `chat:${roomId}`,
+      message: JSON.stringify({
         event: 'message_received',
-        data: { id: String(msg._id), room_id: roomId, sender_id: senderId, content: dto.content, created_at: msg['createdAt'] },
+        data: {
+          id: String(msg._id),
+          room_id: roomId,
+          sender_id: senderId,
+          content: dto.content,
+          created_at: msg['createdAt'],
+        },
       }),
-    );
+    });
 
-    return msg;
+    return msg as unknown as Record<string, unknown>;
   }
 
-  async markRead(roomId: string, userId: string) {
+  async markRead({ roomId, userId }: MarkReadParams): MarkReadResult {
     const room = await this.roomModel.findById(roomId).lean().exec();
     if (!room) throw new NotFoundException('Room not found');
     this.assertParticipant(room, userId);
@@ -129,10 +141,10 @@ export class ChatService {
       { read: true },
     );
 
-    await this.cache.publish(
-      `chat:${roomId}`,
-      JSON.stringify({ event: 'messages_read', data: { room_id: roomId, read_by: userId } }),
-    );
+    await this.cache.publish({
+      channel: `chat:${roomId}`,
+      message: JSON.stringify({ event: 'messages_read', data: { room_id: roomId, read_by: userId } }),
+    });
   }
 
   private assertParticipant(room: ChatRoom, userId: string) {

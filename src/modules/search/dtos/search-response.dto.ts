@@ -1,18 +1,25 @@
 export interface SearchProviderItem {
   id: string;
-  business_name: string;
-  average_rating: number;
-  review_count: number;
-  services: Array<{ name: string; price_base: number; price_type: string }>;
-  work_locations: Array<{ city: string; state: string }>;
-  is_available: boolean;
+  businessName: string;
+  averageRating: number;
+  reviewCount: number;
+  services: Array<{ name: string; priceBase: number; priceType: string }>;
+  workLocations: Array<{ city: string; state: string }>;
+  isAvailable: boolean;
 }
 
 export interface SearchMeta {
   page: number;
   limit: number;
   total: number;
-  total_pages: number;
+  totalPages: number;
+}
+
+export interface PaginationLinks {
+  first: string | null;
+  last: string | null;
+  next: string | null;
+  previous: string | null;
 }
 
 export interface SearchFilter {
@@ -24,11 +31,20 @@ export interface SearchFilter {
   config: Record<string, unknown>;
 }
 
+export interface ComponentAction {
+  type: 'navigate' | 'open_modal' | 'external_link' | 'none';
+  route?: string;
+  url?: string;
+  params?: Record<string, string>;
+}
+
 export interface SearchLayoutComponent {
   id: string;
   type: string;
   order: number;
   config: Record<string, unknown>;
+  /** Ação ao tocar. null = componente não interativo. */
+  action: ComponentAction | null;
 }
 
 export interface SearchResponseDto {
@@ -38,4 +54,5 @@ export interface SearchResponseDto {
   filters: SearchFilter[];
   data: SearchProviderItem[];
   meta: SearchMeta;
+  links: PaginationLinks;
 }

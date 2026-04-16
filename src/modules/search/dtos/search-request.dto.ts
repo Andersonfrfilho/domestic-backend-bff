@@ -1,8 +1,14 @@
 import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 export class SearchRequestDto {
   @IsUUID()
   @IsOptional()
+  categoryId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  @ApiHideProperty()
   category_id?: string;
 
   @IsString()
@@ -17,6 +23,13 @@ export class SearchRequestDto {
   @Min(1)
   @Max(5)
   @IsOptional()
+  ratingMin?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  @ApiHideProperty()
   rating_min?: number;
 
   @IsBoolean()

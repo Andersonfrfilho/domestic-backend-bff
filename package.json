@@ -26,7 +26,17 @@
     "test:e2e:watch": "jest --watch --config jest.config.e2e.ts",
     "test:e2e:ci": "DOTENV_CONFIG_PATH=.env.e2e jest --config jest.config.e2e.ts --runInBand",
     "test:all": "npm run test:unit && npm run test:e2e",
-    "sonar": "sonar-scanner"
+    "sonar": "sonar-scanner",
+    "flows": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts",
+    "flows:health": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts health",
+    "flows:home": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts home",
+    "flows:search": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts search",
+    "flows:provider-profile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts provider-profile",
+    "flows:dashboard": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts dashboard",
+    "flows:notification": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts notification",
+    "flows:chat": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts chat",
+    "flows:screens": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts screens",
+    "flows:app-config": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts app-config"
   },
   "dependencies": {
     "@adatechnology/auth-keycloak": "^0.1.3",

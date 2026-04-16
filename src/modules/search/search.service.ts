@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
@@ -8,8 +8,14 @@ import { ScreenConfigService } from '@modules/shared/screen/screen-config.servic
 import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 
-import type { SearchFilter, SearchLayoutComponent, SearchProviderItem, SearchResponseDto } from './dtos/search-response.dto';
+import type {
+  SearchFilter,
+  SearchLayoutComponent,
+  SearchProviderItem,
+  SearchResponseDto,
+} from './dtos/search-response.dto';
 import type { SearchRequestDto } from './dtos/search-request.dto';
 
 const DEFAULT_FILTERS: SearchFilter[] = [
@@ -44,9 +50,29 @@ const DEFAULT_FILTERS: SearchFilter[] = [
 ];
 
 const DEFAULT_LAYOUT: SearchLayoutComponent[] = [
-  { id: 'filter_bar', type: 'search_filters', order: 0, config: { collapsible: true } },
-  { id: 'results', type: 'provider_list', order: 1, config: { show_map: false } },
+  {
+    id: 'filter_bar',
+    type: 'search_filters',
+    order: 0,
+    config: { collapsible: true },
+    action: null,
+  },
+  {
+    id: 'results',
+    type: 'provider_list',
+    order: 1,
+    config: { show_map: false },
+    action: { type: 'navigate', route: '/providers/{id}' },
+  },
 ];
+
+const asString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : fallback;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'bigint') return value.toString();
+  return fallback;
+};
 
 @Injectable()
 export class SearchService {
@@ -62,7 +88,7 @@ export class SearchService {
   ) {}
 
   async search(params: SearchRequestDto): Promise<SearchResponseDto> {
-    const cacheKey = `bff:search:${this.hashParams(params)}`;
+    const cacheKey = CACHE_KEYS.SEARCH(this.hashParams(params));
     const cached = await this.cache.get<SearchResponseDto>(cacheKey);
     if (cached) return cached;
 
@@ -75,7 +101,13 @@ export class SearchService {
       ? screenCfg.components
           .filter((c) => c.visible)
           .sort((a, b) => a.order - b.order)
-          .map((c) => ({ id: c.id, type: c.type, order: c.order, config: c.config }))
+          .map((c) => ({
+            id: c.id,
+            type: c.type,
+            order: c.order,
+            config: c.config,
+            action: c.action ?? null,
+          }))
       : DEFAULT_LAYOUT;
 
     // Filters podem ser sobrescritos por config no MongoDB futuramente
@@ -86,20 +118,25 @@ export class SearchService {
       filters,
       data: apiResult.data,
       meta: apiResult.meta,
+      // links are built by CamelCaseResponseInterceptor from meta; nulls are safe defaults
+      links: { first: null, last: null, next: null, previous: null },
     };
 
     const ttl = Number(process.env.CACHE_TTL_SEARCH ?? 120);
-    await this.cache.set(cacheKey, response, ttl);
+    await this.cache.set({ key: cacheKey, value: response, ttlSeconds: ttl });
 
     return response;
   }
 
   private async fetchProviders(params: SearchRequestDto) {
     const qs = new URLSearchParams();
-    if (params.category_id) qs.set('category_id', params.category_id);
+    // Suporte a camelCase e snake_case para compatibilidade
+    const categoryId = params.categoryId ?? params.category_id;
+    const ratingMin = params.ratingMin ?? params.rating_min;
+    if (categoryId) qs.set('category_id', categoryId);
     if (params.city) qs.set('city', params.city);
     if (params.state) qs.set('state', params.state);
-    if (params.rating_min !== undefined) qs.set('rating_min', String(params.rating_min));
+    if (ratingMin !== undefined) qs.set('rating_min', String(ratingMin));
     if (params.available !== undefined) qs.set('available', String(params.available));
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
@@ -108,33 +145,54 @@ export class SearchService {
       const data = await this.api.get<{
         data?: Record<string, unknown>[];
         meta?: { total?: number; page?: number; limit?: number };
-      }>(`/api/v1/providers?${qs.toString()}`);
+      }>({ path: `/api/v1/providers?${qs.toString()}` });
 
       const items: SearchProviderItem[] = (data.data ?? []).map((p) => ({
-        id: String(p['id'] ?? ''),
-        business_name: String(p['business_name'] ?? ''),
-        average_rating: Number(p['average_rating'] ?? 0),
-        review_count: Number(p['review_count'] ?? 0),
-        services: (p['services'] as SearchProviderItem['services']) ?? [],
-        work_locations: (p['work_locations'] as SearchProviderItem['work_locations']) ?? [],
-        is_available: Boolean(p['is_available'] ?? false),
+        id: asString(p['id']),
+        businessName: asString(p['business_name']),
+        averageRating: Number(p['average_rating'] ?? 0),
+        reviewCount: Number(p['review_count'] ?? 0),
+        services: Array.isArray(p['services'])
+          ? p['services'].map((s) => {
+              const svc = (typeof s === 'object' && s !== null ? s : {}) as Record<string, unknown>;
+              return {
+                name: asString(svc['name']),
+                priceBase: Number(svc['price_base'] ?? 0),
+                priceType: asString(svc['price_type']),
+              };
+            })
+          : [],
+        workLocations: Array.isArray(p['work_locations'])
+          ? p['work_locations'].map((w) => {
+              const loc = (typeof w === 'object' && w !== null ? w : {}) as Record<string, unknown>;
+              return {
+                city: asString(loc['city']),
+                state: asString(loc['state']),
+              };
+            })
+          : [],
+        isAvailable: Boolean(p['is_available'] ?? false),
       }));
 
       const meta = {
-        page: data.meta?.page ?? (params.page ?? 1),
-        limit: data.meta?.limit ?? (params.limit ?? 20),
+        page: data.meta?.page ?? params.page ?? 1,
+        limit: data.meta?.limit ?? params.limit ?? 20,
         total: data.meta?.total ?? items.length,
-        total_pages: Math.ceil((data.meta?.total ?? items.length) / (params.limit ?? 20)),
+        totalPages: Math.ceil((data.meta?.total ?? items.length) / (params.limit ?? 20)),
       };
 
       return { data: items, meta };
     } catch (err) {
       this.logger.warn('Failed to fetch providers for search', err);
-      return { data: [], meta: { page: 1, limit: 20, total: 0, total_pages: 0 } };
+      return { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
     }
   }
 
   private hashParams(params: SearchRequestDto): string {
-    return crypto.createHash('sha256').update(JSON.stringify(params as unknown as Record<string, unknown>)).digest('hex').slice(0, 12);
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(params as unknown as Record<string, unknown>))
+      .digest('hex')
+      .slice(0, 12);
   }
 }

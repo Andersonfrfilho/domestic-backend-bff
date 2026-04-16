@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 
+import type { BffCachePublishParams, BffCacheSetParams } from './bff-cache.types';
+
 @Injectable()
 export class BffCacheService {
   private readonly logger = new Logger(BffCacheService.name);
@@ -28,7 +30,7 @@ export class BffCacheService {
     }
   }
 
-  async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+  async set({ key, value, ttlSeconds }: BffCacheSetParams): Promise<void> {
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
     } catch (err) {
@@ -45,7 +47,7 @@ export class BffCacheService {
   }
 
   /** Pub/Sub: publish para channel (chat) */
-  async publish(channel: string, message: string): Promise<void> {
+  async publish({ channel, message }: BffCachePublishParams): Promise<void> {
     await this.client.publish(channel, message);
   }
 

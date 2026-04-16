@@ -4,32 +4,29 @@ import { ApiClientService } from '@modules/shared/api-client/api-client.service'
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
+import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 
-export interface ContractorDashboard {
-  active_requests: RequestSummary[];
-  pending_requests: RequestSummary[];
-  recent_history: RequestSummary[];
-  unread_notifications: number;
-}
+import type {
+  ContractorDashboard,
+  FetchRequestsParams,
+  FetchRequestsResult,
+  GetContractorDashboardParams,
+  GetContractorDashboardResult,
+  GetProviderDashboardParams,
+  GetProviderDashboardResult,
+  ProviderDashboard,
+  RequestSummary,
+} from './dashboard.types';
 
-export interface ProviderDashboard {
-  incoming_requests: RequestSummary[];
-  active_requests: RequestSummary[];
-  average_rating: number;
-  review_count: number;
-  verification_status: string;
-  unread_notifications: number;
-}
+export type { ContractorDashboard, ProviderDashboard, RequestSummary };
 
-export interface RequestSummary {
-  id: string;
-  status: string;
-  provider_name?: string;
-  contractor_name?: string;
-  service_name: string;
-  scheduled_at: string | null;
-  description: string | null;
-}
+const asString = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : fallback;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'bigint') return value.toString();
+  return fallback;
+};
 
 @Injectable()
 export class DashboardService {
@@ -42,66 +39,79 @@ export class DashboardService {
     private readonly cache: BffCacheService,
   ) {}
 
-  async getContractorDashboard(userId: string, headers: Record<string, string>): Promise<ContractorDashboard> {
-    const cacheKey = `bff:dashboard:contractor:${userId}`;
+  async getContractorDashboard({
+    userId,
+    headers,
+  }: GetContractorDashboardParams): GetContractorDashboardResult {
+    const cacheKey = CACHE_KEYS.DASHBOARD_CONTRACTOR(userId);
     const cached = await this.cache.get<ContractorDashboard>(cacheKey);
     if (cached) return cached;
 
     const [active, history, unread] = await Promise.all([
-      this.fetchRequests('/api/v1/service-requests?status=PENDING,ACCEPTED', headers),
-      this.fetchRequests('/api/v1/service-requests?status=COMPLETED,CANCELLED&limit=5', headers),
+      this.fetchRequests({ path: '/api/v1/service-requests?status=PENDING,ACCEPTED', headers }),
+      this.fetchRequests({
+        path: '/api/v1/service-requests?status=COMPLETED,CANCELLED&limit=5',
+        headers,
+      }),
       this.fetchUnreadCount(headers),
     ]);
 
     const response: ContractorDashboard = {
-      active_requests: active.filter((r) => r.status === 'ACCEPTED'),
-      pending_requests: active.filter((r) => r.status === 'PENDING'),
-      recent_history: history,
-      unread_notifications: unread,
+      activeRequests: active.filter((r) => r.status === 'ACCEPTED'),
+      pendingRequests: active.filter((r) => r.status === 'PENDING'),
+      recentHistory: history,
+      unreadNotifications: unread,
     };
 
     const ttl = Number(process.env.CACHE_TTL_DASHBOARD ?? 60);
-    await this.cache.set(cacheKey, response, ttl);
+    await this.cache.set({ key: cacheKey, value: response, ttlSeconds: ttl });
     return response;
   }
 
-  async getProviderDashboard(userId: string, headers: Record<string, string>): Promise<ProviderDashboard> {
-    const cacheKey = `bff:dashboard:provider:${userId}`;
+  async getProviderDashboard({
+    userId,
+    headers,
+  }: GetProviderDashboardParams): GetProviderDashboardResult {
+    const cacheKey = CACHE_KEYS.DASHBOARD_PROVIDER(userId);
     const cached = await this.cache.get<ProviderDashboard>(cacheKey);
     if (cached) return cached;
 
     const [pending, active, providerData, unread] = await Promise.all([
-      this.fetchRequests('/api/v1/service-requests?status=PENDING', headers),
-      this.fetchRequests('/api/v1/service-requests?status=ACCEPTED', headers),
+      this.fetchRequests({ path: '/api/v1/service-requests?status=PENDING', headers }),
+      this.fetchRequests({ path: '/api/v1/service-requests?status=ACCEPTED', headers }),
       this.fetchProviderStats(headers),
       this.fetchUnreadCount(headers),
     ]);
 
     const response: ProviderDashboard = {
-      incoming_requests: pending,
-      active_requests: active,
-      average_rating: providerData.average_rating,
-      review_count: providerData.review_count,
-      verification_status: providerData.verification_status,
-      unread_notifications: unread,
+      incomingRequests: pending,
+      activeRequests: active,
+      averageRating: providerData.averageRating,
+      reviewCount: providerData.reviewCount,
+      verificationStatus: providerData.verificationStatus,
+      unreadNotifications: unread,
     };
 
     const ttl = Number(process.env.CACHE_TTL_DASHBOARD ?? 60);
-    await this.cache.set(cacheKey, response, ttl);
+    await this.cache.set({ key: cacheKey, value: response, ttlSeconds: ttl });
     return response;
   }
 
-  private async fetchRequests(path: string, headers: Record<string, string>): Promise<RequestSummary[]> {
+  private async fetchRequests({ path, headers }: FetchRequestsParams): FetchRequestsResult {
     try {
-      const data = await this.api.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(path, headers);
-      const items = Array.isArray(data) ? data : ((data as { data?: Record<string, unknown>[] }).data ?? []);
+      const data = await this.api.get<
+        { data?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >({ path, headers });
+      const items = Array.isArray(data)
+        ? data
+        : ((data as { data?: Record<string, unknown>[] }).data ?? []);
       return items.map((r) => ({
-        id: String(r['id'] ?? ''),
-        status: String(r['status'] ?? ''),
-        provider_name: r['provider_name'] as string | undefined,
-        contractor_name: r['contractor_name'] as string | undefined,
-        service_name: String(r['service_name'] ?? ''),
-        scheduled_at: (r['scheduled_at'] as string | null) ?? null,
+        id: asString(r['id']),
+        status: asString(r['status']),
+        providerName: r['provider_name'] as string | undefined,
+        contractorName: r['contractor_name'] as string | undefined,
+        serviceName: asString(r['service_name']),
+        scheduledAt: (r['scheduled_at'] as string | null) ?? null,
         description: (r['description'] as string | null) ?? null,
       }));
     } catch (err) {
@@ -112,20 +122,26 @@ export class DashboardService {
 
   private async fetchProviderStats(headers: Record<string, string>) {
     try {
-      const data = await this.api.get<Record<string, unknown>>('/api/v1/providers/me', headers);
+      const data = await this.api.get<Record<string, unknown>>({
+        path: '/api/v1/providers/me',
+        headers,
+      });
       return {
-        average_rating: Number(data['average_rating'] ?? 0),
-        review_count: Number(data['review_count'] ?? 0),
-        verification_status: String(data['verification_status'] ?? 'PENDING'),
+        averageRating: Number(data['average_rating'] ?? 0),
+        reviewCount: Number(data['review_count'] ?? 0),
+        verificationStatus: asString(data['verification_status'], 'PENDING'),
       };
     } catch {
-      return { average_rating: 0, review_count: 0, verification_status: 'PENDING' };
+      return { averageRating: 0, reviewCount: 0, verificationStatus: 'PENDING' };
     }
   }
 
   private async fetchUnreadCount(headers: Record<string, string>): Promise<number> {
     try {
-      const data = await this.api.get<{ count: number }>('/api/v1/notifications/unread-count', headers);
+      const data = await this.api.get<{ count: number }>({
+        path: '/api/v1/notifications/unread-count',
+        headers,
+      });
       return data.count ?? 0;
     } catch {
       return 0;

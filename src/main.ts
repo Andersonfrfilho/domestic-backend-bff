@@ -9,6 +9,7 @@ import { swaggerCustomOptions } from '@config/swagger-custom.config';
 import { swaggerConfig } from '@config/swagger.config';
 import { AppErrorFactory } from '@modules/error';
 import { docsFactory } from '@modules/shared/docs/docs.factory';
+import { CamelCaseResponseInterceptor } from '@modules/shared/interceptors/camel-case-response.interceptor';
 
 import * as tsConfig from '../tsconfig.json';
 
@@ -23,10 +24,7 @@ tsConfigPathsRegister({
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter(),
-  );
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   // Socket.io adapter para WebSocket (usa Redis Pub/Sub multi-instance)
   app.useWebSocketAdapter(new IoAdapter(app));
@@ -40,6 +38,8 @@ async function bootstrap() {
       exceptionFactory: (errors) => AppErrorFactory.fromValidationErrors(errors),
     }),
   );
+
+  app.useGlobalInterceptors(new CamelCaseResponseInterceptor());
 
   const environment = app.get<EnvironmentProviderInterface>(ENVIRONMENT_SERVICE_PROVIDER);
   const document = SwaggerModule.createDocument(app, swaggerConfig(environment));
