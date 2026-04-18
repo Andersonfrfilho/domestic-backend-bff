@@ -27,6 +27,10 @@ services:
       - ./logs:/app/logs
     stdin_open: true
     tty: true
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   ### MONGODB
   database_mongo:
@@ -40,6 +44,10 @@ services:
     volumes:
       - database_mongo_data:/data/db
       - database_mongo_config:/data/configdb
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   ### REDIS (cache + Pub/Sub)
   cache_redis:
@@ -52,6 +60,10 @@ services:
       - '${CACHE_REDIS_PORT}:6379'
     volumes:
       - cache_redis_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 64m
 
   ### KEYCLOAK
   keycloak:
@@ -69,6 +81,7 @@ services:
       KC_HOSTNAME_STRICT: false
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
+      JAVA_OPTS_APPEND: "-Xms128m -Xmx512m"
     ports:
       - '${KEYCLOAK_PORT}:8080'
     depends_on:
@@ -78,6 +91,10 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak-config/domestic-backend-realm.json:/opt/keycloak/data/import/domestic-backend-realm.json
+    deploy:
+      resources:
+        limits:
+          memory: 600m
 
   database_keycloak:
     image: postgres:18
@@ -95,6 +112,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   ### SONARQUBE (opcional)
   sonarqube:
@@ -115,6 +136,10 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_temp:/opt/sonarqube/temp
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   sonar-db:
     image: postgres:13
@@ -128,6 +153,10 @@ services:
     volumes:
       - sonar_database:/var/lib/postgresql
       - sonar_database_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
 volumes:
   sonarqube_data:
