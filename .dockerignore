@@ -17,3 +17,4 @@ logs
 jest.config.*
 .github
 makefile
+*.tsbuildinfo
