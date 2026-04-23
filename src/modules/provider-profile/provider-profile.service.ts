@@ -99,7 +99,7 @@ export class ProviderProfileService {
   private async fetchProvider({ id, headers }: FetchProviderParams): FetchProviderResult {
     try {
       return await this.api.get<Record<string, unknown>>({
-        path: `/api/v1/providers/${id}`,
+        path: `/v1/providers/${id}`,
         headers,
       });
     } catch (err) {
@@ -114,7 +114,7 @@ export class ProviderProfileService {
       const data = await this.api.get<
         { data?: Record<string, unknown>[] } | Record<string, unknown>[]
       >({
-        path: `/api/v1/reviews/provider/${providerId}?limit=5&sort=created_at`,
+        path: `/v1/reviews/provider/${providerId}?limit=5&sort=created_at`,
         headers,
       });
       const items = Array.isArray(data)

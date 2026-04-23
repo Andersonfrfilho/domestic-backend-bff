@@ -24,7 +24,7 @@ export class NotificationController {
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
   list(@Headers() headers: Record<string, string>) {
-    return this.api.get({ path: '/api/v1/notifications', headers });
+    return this.api.get({ path: '/v1/notifications', headers });
   }
 
   @Get('unread-count')
@@ -35,7 +35,7 @@ export class NotificationController {
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
   unreadCount(@Headers() headers: Record<string, string>) {
-    return this.api.get({ path: '/api/v1/notifications/unread-count', headers });
+    return this.api.get({ path: '/v1/notifications/unread-count', headers });
   }
 
   @Put(':id/read')
@@ -52,7 +52,7 @@ export class NotificationController {
     notFound: true,
   })
   markRead(@Param('id') id: string, @Headers() headers: Record<string, string>) {
-    return this.api.put({ path: `/api/v1/notifications/${id}/read`, body: {}, headers });
+    return this.api.put({ path: `/v1/notifications/${id}/read`, body: {}, headers });
   }
 
   @Put('read-all')
@@ -63,6 +63,6 @@ export class NotificationController {
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
   markAllRead(@Body() _body: unknown, @Headers() headers: Record<string, string>) {
-    return this.api.put({ path: '/api/v1/notifications/read-all', body: {}, headers });
+    return this.api.put({ path: '/v1/notifications/read-all', body: {}, headers });
   }
 }

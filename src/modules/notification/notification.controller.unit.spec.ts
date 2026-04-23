@@ -30,7 +30,7 @@ describe('NotificationController', () => {
       const expected = [{ id: 'n1', message: 'Test' }];
       mockApi.get.mockResolvedValue(expected);
       const result = controller.list(HEADERS);
-      expect(mockApi.get).toHaveBeenCalledWith({ path: '/api/v1/notifications', headers: HEADERS });
+      expect(mockApi.get).toHaveBeenCalledWith({ path: '/v1/notifications', headers: HEADERS });
       expect(result).resolves.toEqual(expected);
     });
   });
@@ -39,7 +39,7 @@ describe('NotificationController', () => {
     it('proxies GET /api/v1/notifications/unread-count', () => {
       mockApi.get.mockResolvedValue({ count: 5 });
       const result = controller.unreadCount(HEADERS);
-      expect(mockApi.get).toHaveBeenCalledWith({ path: '/api/v1/notifications/unread-count', headers: HEADERS });
+      expect(mockApi.get).toHaveBeenCalledWith({ path: '/v1/notifications/unread-count', headers: HEADERS });
       expect(result).resolves.toEqual({ count: 5 });
     });
   });
@@ -49,7 +49,7 @@ describe('NotificationController', () => {
       mockApi.put.mockResolvedValue({ success: true });
       const result = controller.markRead('notif-1', HEADERS);
       expect(mockApi.put).toHaveBeenCalledWith({
-        path: '/api/v1/notifications/notif-1/read',
+        path: '/v1/notifications/notif-1/read',
         body: {},
         headers: HEADERS,
       });
@@ -62,7 +62,7 @@ describe('NotificationController', () => {
       mockApi.put.mockResolvedValue({ success: true });
       const result = controller.markAllRead({}, HEADERS);
       expect(mockApi.put).toHaveBeenCalledWith({
-        path: '/api/v1/notifications/read-all',
+        path: '/v1/notifications/read-all',
         body: {},
         headers: HEADERS,
       });

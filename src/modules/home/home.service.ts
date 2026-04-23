@@ -86,7 +86,7 @@ export class HomeService {
   private async fetchCategories(): Promise<FeaturedCategory[]> {
     try {
       const data = await this.api.get<{ data?: unknown[]; items?: unknown[] } | unknown[]>({
-        path: '/api/v1/categories',
+        path: '/v1/categories',
       });
       const items = Array.isArray(data)
         ? data
@@ -108,7 +108,7 @@ export class HomeService {
   private async fetchFeaturedProviders(): Promise<FeaturedProvider[]> {
     try {
       const data = await this.api.get<{ data?: unknown[] } | unknown[]>({
-        path: '/api/v1/providers?sort=rating&limit=10&available=true',
+        path: '/v1/providers?sort=rating&limit=10&available=true',
       });
       const items = Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
       return (items as Record<string, unknown>[]).map((p) => ({

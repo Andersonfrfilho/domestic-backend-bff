@@ -145,7 +145,7 @@ export class SearchService {
       const data = await this.api.get<{
         data?: Record<string, unknown>[];
         meta?: { total?: number; page?: number; limit?: number };
-      }>({ path: `/api/v1/providers?${qs.toString()}` });
+      }>({ path: `/v1/providers?${qs.toString()}` });
 
       const items: SearchProviderItem[] = (data.data ?? []).map((p) => ({
         id: asString(p['id']),

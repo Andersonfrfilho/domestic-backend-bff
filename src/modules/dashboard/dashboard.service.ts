@@ -48,9 +48,9 @@ export class DashboardService {
     if (cached) return cached;
 
     const [active, history, unread] = await Promise.all([
-      this.fetchRequests({ path: '/api/v1/service-requests?status=PENDING,ACCEPTED', headers }),
+      this.fetchRequests({ path: '/v1/service-requests?status=PENDING,ACCEPTED', headers }),
       this.fetchRequests({
-        path: '/api/v1/service-requests?status=COMPLETED,CANCELLED&limit=5',
+        path: '/v1/service-requests?status=COMPLETED,CANCELLED&limit=5',
         headers,
       }),
       this.fetchUnreadCount(headers),
@@ -77,8 +77,8 @@ export class DashboardService {
     if (cached) return cached;
 
     const [pending, active, providerData, unread] = await Promise.all([
-      this.fetchRequests({ path: '/api/v1/service-requests?status=PENDING', headers }),
-      this.fetchRequests({ path: '/api/v1/service-requests?status=ACCEPTED', headers }),
+      this.fetchRequests({ path: '/v1/service-requests?status=PENDING', headers }),
+      this.fetchRequests({ path: '/v1/service-requests?status=ACCEPTED', headers }),
       this.fetchProviderStats(headers),
       this.fetchUnreadCount(headers),
     ]);
@@ -123,7 +123,7 @@ export class DashboardService {
   private async fetchProviderStats(headers: Record<string, string>) {
     try {
       const data = await this.api.get<Record<string, unknown>>({
-        path: '/api/v1/providers/me',
+        path: '/v1/providers/me',
         headers,
       });
       return {
@@ -139,7 +139,7 @@ export class DashboardService {
   private async fetchUnreadCount(headers: Record<string, string>): Promise<number> {
     try {
       const data = await this.api.get<{ count: number }>({
-        path: '/api/v1/notifications/unread-count',
+        path: '/v1/notifications/unread-count',
         headers,
       });
       return data.count ?? 0;
