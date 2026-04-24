@@ -20,8 +20,7 @@ RUN if ls src/modules/shared/providers/database/migrations/*.ts 2>/dev/null; the
       --skipLibCheck \
       --strict false; \
   fi && \
-  npm prune --omit=dev && \
-  npm install --no-save tsconfig-paths
+  npm prune --omit=dev
 
 # ===== STAGE 2: Runtime (Production) =====
 FROM node:25-alpine
