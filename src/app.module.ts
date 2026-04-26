@@ -22,6 +22,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { ScreensModule } from './modules/screens/screens.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
 import { NavigationModule } from './modules/navigation/navigation.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 import * as tsConfig from '../tsconfig.json';
 
@@ -53,6 +54,7 @@ tsConfigPathsRegister({
     ScreensModule,
     AppConfigModule,
     NavigationModule,
+    AuthModule,
   ],
 })
 export class AppModule implements NestModule {

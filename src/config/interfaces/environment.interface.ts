@@ -21,6 +21,11 @@ export interface EnvironmentProviderInterface {
   readonly cacheTtlProviderProfile: number;
   readonly cacheTtlDashboard: number;
 
+  readonly keycloakBaseUrl: string;
+  readonly keycloakRealm: string;
+  readonly keycloakAdminUser: string;
+  readonly keycloakAdminPassword: string;
+
   isDevelopment(): boolean;
   isProduction(): boolean;
   isTest(): boolean;

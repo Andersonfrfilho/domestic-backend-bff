@@ -62,6 +62,22 @@ export class EnvironmentProvider implements EnvironmentProviderInterface {
     return this.configService.getOrThrow<number>(ENV_VARS.CACHE_TTL_PROVIDER_PROFILE);
   }
 
+  get keycloakBaseUrl(): string {
+    return this.configService.getOrThrow<string>(ENV_VARS.KEYCLOAK_BASE_URL);
+  }
+
+  get keycloakRealm(): string {
+    return this.configService.getOrThrow<string>(ENV_VARS.KEYCLOAK_REALM);
+  }
+
+  get keycloakAdminUser(): string {
+    return this.configService.getOrThrow<string>(ENV_VARS.KEYCLOAK_ADMIN_USER);
+  }
+
+  get keycloakAdminPassword(): string {
+    return this.configService.getOrThrow<string>(ENV_VARS.KEYCLOAK_ADMIN_PASSWORD);
+  }
+
   get cacheTtlDashboard(): number {
     return this.configService.getOrThrow<number>(ENV_VARS.CACHE_TTL_DASHBOARD);
   }
