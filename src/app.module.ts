@@ -2,6 +2,8 @@ import { LoggerModule, RequestContextMiddleware } from '@adatechnology/logger';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { register as tsConfigPathsRegister } from 'tsconfig-paths';
 
+import { MetricsModule } from './modules/metrics/metrics.module';
+
 import { ConfigModule } from '@config/config.module';
 import { HealthModule } from '@modules/health/health.module';
 
@@ -31,6 +33,7 @@ tsConfigPathsRegister({
 
 @Module({
   imports: [
+    MetricsModule,
     ConfigModule,
     LoggerModule.forRoot({ level: process.env.LOG_LEVEL || 'info' }),
     // Infraestrutura BFF
