@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
 import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
+import type { Navigation } from '@modules/shared/navigation/interfaces/navigation.interface';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
@@ -39,7 +40,25 @@ export class AppConfigService {
     const cached = await this.cache.get<AppConfigResponseDto>(CACHE_KEYS.APP_CONFIG);
     if (cached) return cached;
 
-    const navigation = await this.navigationConfig.getNavigation('default');
+    let navigation: Navigation;
+    try {
+      navigation = await this.navigationConfig.getNavigation('default');
+    } catch (err) {
+      this.logger.warn(`Failed to get navigation config, using default: ${err instanceof Error ? err.message : err}`);
+      navigation = {
+        tabBar: {
+          visible: true,
+          items: [
+            { id: 'home', label: 'Início', icon: 'home', route: '/home', visible: true },
+            { id: 'search', label: 'Buscar', icon: 'search', route: '/search', visible: true },
+            { id: 'dashboard', label: 'Pedidos', icon: 'list', route: '/dashboard', visible: true },
+            { id: 'chat', label: 'Chat', icon: 'chat', route: '/chat', visible: true },
+            { id: 'notifications', label: 'Avisos', icon: 'bell', route: '/notifications', visible: true },
+          ],
+        },
+        header: { title: null, showBack: false, actions: [] },
+      };
+    }
 
     const response: AppConfigResponseDto = {
       navigation,

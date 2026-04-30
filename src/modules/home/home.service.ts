@@ -5,6 +5,7 @@ import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token'
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
 import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
+import type { ScreenConfig } from '@modules/shared/screen/schemas/screen-config.schema';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
@@ -47,11 +48,22 @@ export class HomeService {
     const cached = await this.cache.get<HomeResponseDto>(CACHE_KEYS.HOME);
     if (cached) return cached;
 
-    const [categories, providers, screenCfg] = await Promise.all([
-      this.fetchCategories(),
-      this.fetchFeaturedProviders(),
-      this.screenConfig.getActiveScreen('home'),
-    ]);
+    let categories: FeaturedCategory[];
+    let providers: FeaturedProvider[];
+    let screenCfg: ScreenConfig | null;
+
+    try {
+      [categories, providers, screenCfg] = await Promise.all([
+        this.fetchCategories(),
+        this.fetchFeaturedProviders(),
+        this.screenConfig.getActiveScreen('home'),
+      ]);
+    } catch (err) {
+      this.logger.warn(`Failed to fetch home data, using defaults: ${err instanceof Error ? err.message : err}`);
+      categories = [];
+      providers = [];
+      screenCfg = null;
+    }
 
     // Resolve cada componente do layout com seus dados
     const layout: ScreenComponentData[] = screenCfg
