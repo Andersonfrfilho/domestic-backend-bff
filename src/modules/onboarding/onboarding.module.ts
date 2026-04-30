@@ -7,6 +7,7 @@ import { EnvironmentProvider } from '@config/providers/environment.provider';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
+import { GeocodingService } from '@modules/auth/geocoding.service';
 import { OnboardingController } from './onboarding.controller';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
@@ -19,6 +20,7 @@ import { VerificationService } from './verification.service';
     VerificationService,
     DocumentService,
     CepService,
+    GeocodingService,
     EnvironmentProvider,
     ApiClientService,
   ],
