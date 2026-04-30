@@ -46,10 +46,16 @@ export class NavigationConfigService {
     const cached = await this.cache.get<Navigation>(cacheKey);
     if (cached) return cached;
 
-    const config = await this.model
-      .findOne({ screen_id: screenId, is_active: true })
-      .lean()
-      .exec();
+    let config: NavigationConfig | null;
+    try {
+      config = await this.model
+        .findOne({ screen_id: screenId, is_active: true })
+        .lean()
+        .exec();
+    } catch (err) {
+      this.logger.warn(`Failed to get navigation config for ${screenId}: ${err instanceof Error ? err.message : err}`);
+      config = null;
+    }
 
     if (!config) {
       if (screenId !== 'default') {

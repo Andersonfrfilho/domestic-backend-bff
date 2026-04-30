@@ -5,7 +5,7 @@
 .PHONY: help infra bff-up down clean \
         dev test test-unit test-e2e \
         lint format sonar-scan \
-        setup-env
+        setup-env seed-mongodb
 
 # ─── Variáveis ──────────────────────────────────────────────────────────────
 
@@ -80,6 +80,12 @@ bff-up: setup-env ## Sobe apenas o container do BFF
 	COMPOSE_PROJECT_NAME=$(COMPOSE_PROJECT_NAME) docker-compose -f $(COMPOSE_FILE) up -d bff
 
 all: infra bff-up ## Sobe infra + BFF (atalho principal)
+
+# ─── Seed ──────────────────────────────────────────────────────────────────
+
+seed-mongodb: infra ## Roda seed do MongoDB (simula initContainer do k8s)
+	@echo "🌱 Rodando seed do MongoDB..."
+	MONGO_URI=$${MONGO_URI:-mongodb://localhost:27017/domestic-bff} npm run seed:mongodb
 
 # ─── Comandos Docker ──────────────────────────────────────────────────────
 
