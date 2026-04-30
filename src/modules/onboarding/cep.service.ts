@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 
-import { GeocodingService } from './geocoding.service';
+import { GeocodingService } from '@modules/auth/geocoding.service';
 import { CepServiceInterface } from './interfaces/cep-service.interface';
 import { CepResponseDto } from './dtos/cep-response.dto';
 

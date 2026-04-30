@@ -11,7 +11,7 @@ export class DocumentService implements DocumentServiceInterface {
   constructor(private readonly apiClient: ApiClientService) {}
 
   async uploadDocument(
-    userId: string,
+    keycloakId: string,
     file: Express.Multer.File,
     documentType: string,
   ): Promise<UploadDocumentResponseDto> {
@@ -20,11 +20,13 @@ export class DocumentService implements DocumentServiceInterface {
       const blob = new Blob([file.buffer as BlobPart], { type: file.mimetype });
       formData.append('file', blob, file.originalname);
       formData.append('documentType', documentType);
-      formData.append('userId', userId);
 
       const url = `${this.getBaseUrl()}/documents`;
       const response = await fetch(url, {
         method: 'POST',
+        headers: {
+          'X-User-Id': keycloakId,
+        },
         body: formData,
       });
 
@@ -35,7 +37,7 @@ export class DocumentService implements DocumentServiceInterface {
 
       const data = (await response.json()) as { id: string; url: string };
 
-      this.logger.log(`Document uploaded successfully for user ${userId}`);
+      this.logger.log(`Document uploaded successfully for user ${keycloakId}`);
 
       return {
         documentId: data.id,
@@ -43,7 +45,7 @@ export class DocumentService implements DocumentServiceInterface {
         message: 'Documento enviado com sucesso',
       };
     } catch (error) {
-      this.logger.error(`Failed to upload document for user ${userId}: ${error.message}`);
+      this.logger.error(`Failed to upload document for user ${keycloakId}: ${error.message}`);
       throw new InternalServerErrorException('Falha ao enviar documento');
     }
   }
