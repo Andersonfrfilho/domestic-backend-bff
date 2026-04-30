@@ -23,5 +23,5 @@ const sdk = new NodeSDK({
 sdk.start();
 
 process.on('SIGTERM', () => {
-  sdk.shutdown().finally(() => process.exit(0));
+  void sdk.shutdown().finally(() => process.exit(0));
 });
