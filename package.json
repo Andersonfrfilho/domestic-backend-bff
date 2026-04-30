@@ -37,7 +37,7 @@
     "flows:chat": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts chat",
     "flows:screens": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts screens",
     "flows:app-config": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flows/index.ts app-config",
-    "seed:mongodb": "npx ts-node scripts/seed-mongodb.ts"
+    "seed:mongodb": "node scripts/seed-mongodb.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.8.0",
