@@ -16,9 +16,7 @@ export class BffCacheService {
       lazyConnect: true,
     });
 
-    this.client.on('error', (err) =>
-      this.logger.error('Redis connection error', err),
-    );
+    this.client.on('error', (err) => this.logger.error('Redis connection error', err));
   }
 
   async get<T>(key: string): Promise<T | null> {

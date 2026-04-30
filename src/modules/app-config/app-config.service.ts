@@ -8,7 +8,11 @@ import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 
-import type { AppConfigResponseDto, FeaturesDto, AppVersionDto } from './dtos/app-config-response.dto';
+import type {
+  AppConfigResponseDto,
+  FeaturesDto,
+  AppVersionDto,
+} from './dtos/app-config-response.dto';
 
 const CACHE_TTL = 300; // 5min
 
@@ -44,7 +48,9 @@ export class AppConfigService {
     try {
       navigation = await this.navigationConfig.getNavigation('default');
     } catch (err) {
-      this.logger.warn(`Failed to get navigation config, using default: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `Failed to get navigation config, using default: ${err instanceof Error ? err.message : err}`,
+      );
       navigation = {
         tabBar: {
           visible: true,
@@ -53,7 +59,13 @@ export class AppConfigService {
             { id: 'search', label: 'Buscar', icon: 'search', route: '/search', visible: true },
             { id: 'dashboard', label: 'Pedidos', icon: 'list', route: '/dashboard', visible: true },
             { id: 'chat', label: 'Chat', icon: 'chat', route: '/chat', visible: true },
-            { id: 'notifications', label: 'Avisos', icon: 'bell', route: '/notifications', visible: true },
+            {
+              id: 'notifications',
+              label: 'Avisos',
+              icon: 'bell',
+              route: '/notifications',
+              visible: true,
+            },
           ],
         },
         header: { title: null, showBack: false, actions: [] },

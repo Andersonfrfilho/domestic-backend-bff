@@ -6,11 +6,7 @@ import { ScreenConfigService } from './screen-config.service';
 import { SCREEN_CONFIG_SERVICE } from './screen-config.token';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: ScreenConfig.name, schema: ScreenConfigSchema },
-    ]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: ScreenConfig.name, schema: ScreenConfigSchema }])],
   providers: [
     {
       provide: SCREEN_CONFIG_SERVICE,

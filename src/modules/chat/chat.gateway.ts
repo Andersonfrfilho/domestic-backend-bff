@@ -17,7 +17,10 @@ import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ChatService } from './chat.service';
 import { CHAT_SERVICE } from './chat.token';
 
-@WebSocketGateway({ namespace: '/chat', cors: { origin: (process.env.WS_CORS_ORIGINS ?? '*').split(',') } })
+@WebSocketGateway({
+  namespace: '/chat',
+  cors: { origin: (process.env.WS_CORS_ORIGINS ?? '*').split(',') },
+})
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy
 {
@@ -77,20 +80,21 @@ export class ChatGateway
     try {
       await this.chatService.getRoom({ roomId: payload.room_id, userId });
       await client.join(payload.room_id);
-      this.server.to(payload.room_id).emit('user_joined', { room_id: payload.room_id, user_id: userId });
+      this.server
+        .to(payload.room_id)
+        .emit('user_joined', { room_id: payload.room_id, user_id: userId });
     } catch {
       client.emit('error', { code: 'FORBIDDEN', message: 'Not a participant of this room' });
     }
   }
 
   @SubscribeMessage('leave_room')
-  handleLeaveRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { room_id: string },
-  ) {
+  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: { room_id: string }) {
     const userId: string = client.data['userId'];
     client.leave(payload.room_id);
-    this.server.to(payload.room_id).emit('user_left', { room_id: payload.room_id, user_id: userId });
+    this.server
+      .to(payload.room_id)
+      .emit('user_left', { room_id: payload.room_id, user_id: userId });
   }
 
   @SubscribeMessage('send_message')
@@ -100,7 +104,11 @@ export class ChatGateway
   ) {
     const userId: string = client.data['userId'];
     try {
-      await this.chatService.sendMessage({ roomId: payload.room_id, senderId: userId, dto: { content: payload.content } });
+      await this.chatService.sendMessage({
+        roomId: payload.room_id,
+        senderId: userId,
+        dto: { content: payload.content },
+      });
       // A mensagem já é distribuída via Redis Pub/Sub → onModuleInit listener
     } catch (err) {
       client.emit('error', { code: 'ERROR', message: String(err) });

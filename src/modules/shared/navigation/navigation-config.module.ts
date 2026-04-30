@@ -9,9 +9,7 @@ import { NAVIGATION_CONFIG_SERVICE } from './navigation-config.token';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: NavigationConfig.name, schema: NavigationConfigSchema },
-    ]),
+    MongooseModule.forFeature([{ name: NavigationConfig.name, schema: NavigationConfigSchema }]),
     BffCacheModule,
   ],
   providers: [

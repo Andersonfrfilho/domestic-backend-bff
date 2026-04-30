@@ -16,22 +16,28 @@ export class ScreenConfigService {
 
   async getActiveScreen(screenId: string): Promise<ScreenConfig | null> {
     try {
-      return this.model
-        .findOne({ screen_id: screenId, is_active: true })
-        .lean()
-        .exec();
+      return this.model.findOne({ screen_id: screenId, is_active: true }).lean().exec();
     } catch (err) {
-      this.logger.warn(`Failed to get screen config for ${screenId}: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `Failed to get screen config for ${screenId}: ${err instanceof Error ? err.message : err}`,
+      );
       return null;
     }
   }
 
-  async upsert({ screenId, version, components }: ScreenConfigUpsertParams): ScreenConfigUpsertResult {
-    const result = await this.model.findOneAndUpdate(
-      { screen_id: screenId },
-      { screen_id: screenId, version, components, is_active: true },
-      { upsert: true, new: true },
-    ).lean().exec();
+  async upsert({
+    screenId,
+    version,
+    components,
+  }: ScreenConfigUpsertParams): ScreenConfigUpsertResult {
+    const result = await this.model
+      .findOneAndUpdate(
+        { screen_id: screenId },
+        { screen_id: screenId, version, components, is_active: true },
+        { upsert: true, new: true },
+      )
+      .lean()
+      .exec();
 
     this.logger.log(`Screen config upserted: ${screenId} v${version}`);
     return result as ScreenConfig;

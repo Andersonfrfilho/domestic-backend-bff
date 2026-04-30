@@ -10,7 +10,15 @@ const mockConfig = {
   version: '1.0',
   is_active: true,
   components: [
-    { id: 'cats', type: 'category_list', data_source: 'categories', order: 0, config: {}, visible: true, action: null },
+    {
+      id: 'cats',
+      type: 'category_list',
+      data_source: 'categories',
+      order: 0,
+      config: {},
+      visible: true,
+      action: null,
+    },
   ],
 };
 

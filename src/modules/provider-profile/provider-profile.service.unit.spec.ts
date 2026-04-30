@@ -24,7 +24,13 @@ const rawProvider = {
   is_available: true,
   verification_status: 'VERIFIED',
   services: [
-    { id: 's1', name: 'Limpeza', category: { id: 'c1', name: 'Limpeza' }, price_base: 150, price_type: 'FIXED' },
+    {
+      id: 's1',
+      name: 'Limpeza',
+      category: { id: 'c1', name: 'Limpeza' },
+      price_base: 150,
+      price_type: 'FIXED',
+    },
   ],
   work_locations: [{ city: 'São Paulo', state: 'SP', is_primary: true }],
 };
@@ -108,9 +114,9 @@ describe('ProviderProfileService', () => {
       return Promise.resolve({ data: [] });
     });
 
-    await expect(
-      service.getProfile({ providerId: PROVIDER_ID, headers: HEADERS }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.getProfile({ providerId: PROVIDER_ID, headers: HEADERS })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('returns empty recentReviews when reviews fetch fails', async () => {

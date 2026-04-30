@@ -7,8 +7,15 @@ import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 
 import type { Navigation } from './interfaces/navigation.interface';
-import type { NavigationConfigUpsertParams, NavigationConfigUpsertResult } from './navigation-config.types';
-import { NavigationConfig, NavigationConfigDocument, TabBarItemDoc } from './schemas/navigation-config.schema';
+import type {
+  NavigationConfigUpsertParams,
+  NavigationConfigUpsertResult,
+} from './navigation-config.types';
+import {
+  NavigationConfig,
+  NavigationConfigDocument,
+  TabBarItemDoc,
+} from './schemas/navigation-config.schema';
 
 const CACHE_TTL = 300; // 5min
 
@@ -20,7 +27,13 @@ export const DEFAULT_NAVIGATION: Navigation = {
       { id: 'search', label: 'Buscar', icon: 'search', route: '/search', visible: true },
       { id: 'dashboard', label: 'Pedidos', icon: 'list', route: '/dashboard', visible: true },
       { id: 'chat', label: 'Chat', icon: 'chat', route: '/chat', visible: true },
-      { id: 'notifications', label: 'Avisos', icon: 'bell', route: '/notifications', visible: true },
+      {
+        id: 'notifications',
+        label: 'Avisos',
+        icon: 'bell',
+        route: '/notifications',
+        visible: true,
+      },
     ],
   },
   header: {
@@ -48,12 +61,11 @@ export class NavigationConfigService {
 
     let config: NavigationConfig | null;
     try {
-      config = await this.model
-        .findOne({ screen_id: screenId, is_active: true })
-        .lean()
-        .exec();
+      config = await this.model.findOne({ screen_id: screenId, is_active: true }).lean().exec();
     } catch (err) {
-      this.logger.warn(`Failed to get navigation config for ${screenId}: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `Failed to get navigation config for ${screenId}: ${err instanceof Error ? err.message : err}`,
+      );
       config = null;
     }
 
@@ -87,7 +99,10 @@ export class NavigationConfigService {
     this.logger.log(`Navigation config deactivated: ${screenId}`);
   }
 
-  async upsert({ screenId, navigation }: NavigationConfigUpsertParams): NavigationConfigUpsertResult {
+  async upsert({
+    screenId,
+    navigation,
+  }: NavigationConfigUpsertParams): NavigationConfigUpsertResult {
     await this.model.findOneAndUpdate(
       { screen_id: screenId },
       {
@@ -126,14 +141,16 @@ export class NavigationConfigService {
     return {
       tabBar: {
         visible: config.tab_bar?.visible ?? true,
-        items: (config.tab_bar?.items ?? []).map((item): TabBarItemDoc => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-          route: item.route,
-          visible: item.visible,
-          badge: item.badge ?? null,
-        })),
+        items: (config.tab_bar?.items ?? []).map(
+          (item): TabBarItemDoc => ({
+            id: item.id,
+            label: item.label,
+            icon: item.icon,
+            route: item.route,
+            visible: item.visible,
+            badge: item.badge ?? null,
+          }),
+        ),
       },
       header: {
         title: config.header?.title ?? null,

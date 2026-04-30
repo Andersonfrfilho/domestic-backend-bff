@@ -67,7 +67,12 @@ export class ChatService {
     return room as unknown as Record<string, unknown>;
   }
 
-  async getMessages({ roomId, userId, page = 1, limit = 50 }: GetMessagesParams): GetMessagesResult {
+  async getMessages({
+    roomId,
+    userId,
+    page = 1,
+    limit = 50,
+  }: GetMessagesParams): GetMessagesResult {
     const room = await this.roomModel.findById(roomId).lean().exec();
     if (!room) throw new NotFoundException('Room not found');
     this.assertParticipant(room, userId);
@@ -143,7 +148,10 @@ export class ChatService {
 
     await this.cache.publish({
       channel: `chat:${roomId}`,
-      message: JSON.stringify({ event: 'messages_read', data: { room_id: roomId, read_by: userId } }),
+      message: JSON.stringify({
+        event: 'messages_read',
+        data: { room_id: roomId, read_by: userId },
+      }),
     });
   }
 

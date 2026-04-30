@@ -59,7 +59,12 @@ describe('AppConfigService', () => {
     it('should return cached result when available', async () => {
       const cachedConfig = {
         navigation: mockNavigation,
-        features: { chatEnabled: false, notificationsEnabled: false, reviewsEnabled: false, providerSearchEnabled: false },
+        features: {
+          chatEnabled: false,
+          notificationsEnabled: false,
+          reviewsEnabled: false,
+          providerSearchEnabled: false,
+        },
         version: { minRequired: '2.0.0', latest: '2.0.0', forceUpdate: true },
       };
       mockCacheService.get.mockResolvedValueOnce(cachedConfig);

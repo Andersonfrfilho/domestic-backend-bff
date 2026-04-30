@@ -32,7 +32,7 @@ export class CepService {
         return null;
       }
 
-      const data = await response.json() as CepResult & { erro?: boolean };
+      const data = (await response.json()) as CepResult & { erro?: boolean };
       if (data.erro) {
         this.logger.warn('CEP not found', { cep });
         return null;

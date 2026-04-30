@@ -79,7 +79,14 @@ describe('NavigationConfigService', () => {
         tab_bar: {
           visible: true,
           items: [
-            { id: 'home', label: 'Início', icon: 'home', route: '/home', visible: true, badge: null },
+            {
+              id: 'home',
+              label: 'Início',
+              icon: 'home',
+              route: '/home',
+              visible: true,
+              badge: null,
+            },
           ],
         },
         header: {
@@ -98,7 +105,14 @@ describe('NavigationConfigService', () => {
         tabBar: {
           visible: true,
           items: [
-            { id: 'home', label: 'Início', icon: 'home', route: '/home', visible: true, badge: null },
+            {
+              id: 'home',
+              label: 'Início',
+              icon: 'home',
+              route: '/home',
+              visible: true,
+              badge: null,
+            },
           ],
         },
         header: {

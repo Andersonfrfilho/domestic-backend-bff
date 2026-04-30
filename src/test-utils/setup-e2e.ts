@@ -37,7 +37,10 @@ beforeAll(async () => {
 
 // Clear MongoDB collections after each test
 afterEach(async () => {
-  if (mongoClient && (mongoClient as unknown as { topology?: { isConnected(): boolean } }).topology?.isConnected()) {
+  if (
+    mongoClient &&
+    (mongoClient as unknown as { topology?: { isConnected(): boolean } }).topology?.isConnected()
+  ) {
     try {
       const db = mongoClient.db();
       const collections = await db.collections();

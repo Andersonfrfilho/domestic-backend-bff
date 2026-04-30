@@ -1,4 +1,8 @@
-import { NotFoundErrorConfig, ConflictErrorConfig, BusinessLogicErrorConfig } from './error-config.interface';
+import {
+  NotFoundErrorConfig,
+  ConflictErrorConfig,
+  BusinessLogicErrorConfig,
+} from './error-config.interface';
 
 export const PROVIDER_ERROR_CONFIGS = {
   notFound: (id?: string): NotFoundErrorConfig => ({

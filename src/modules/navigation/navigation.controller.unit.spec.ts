@@ -11,7 +11,9 @@ const mockConfig = {
   is_active: true,
   tab_bar: {
     visible: true,
-    items: [{ id: 'home', label: 'Início', icon: 'home', route: '/home', visible: true, badge: null }],
+    items: [
+      { id: 'home', label: 'Início', icon: 'home', route: '/home', visible: true, badge: null },
+    ],
   },
   header: { title: null, show_back: false, actions: [] },
 };
@@ -62,7 +64,10 @@ describe('NavigationController', () => {
     it('should upsert and return navigation', async () => {
       const result = await controller.upsertNavigation('default', DEFAULT_NAVIGATION);
       expect(result).toEqual(DEFAULT_NAVIGATION);
-      expect(mockService.upsert).toHaveBeenCalledWith({ screenId: 'default', navigation: DEFAULT_NAVIGATION });
+      expect(mockService.upsert).toHaveBeenCalledWith({
+        screenId: 'default',
+        navigation: DEFAULT_NAVIGATION,
+      });
     });
   });
 

@@ -53,7 +53,11 @@ export class GeocodingService {
         return null;
       }
 
-      const data = await response.json() as Array<{ lat: string; lon: string; display_name: string }>;
+      const data = (await response.json()) as Array<{
+        lat: string;
+        lon: string;
+        display_name: string;
+      }>;
 
       if (data.length === 0) {
         this.logger.warn('No geocoding results', { query });

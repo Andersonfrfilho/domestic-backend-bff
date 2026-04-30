@@ -59,7 +59,9 @@ export class HomeService {
         this.screenConfig.getActiveScreen('home'),
       ]);
     } catch (err) {
-      this.logger.warn(`Failed to fetch home data, using defaults: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `Failed to fetch home data, using defaults: ${err instanceof Error ? err.message : err}`,
+      );
       categories = [];
       providers = [];
       screenCfg = null;

@@ -10,9 +10,9 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Recuperação de senha',
-    description: 'Dispara um e-mail de redefinição de senha via Keycloak.' 
+    description: 'Dispara um e-mail de redefinição de senha via Keycloak.',
   })
   @ApiResponse({ status: 200, description: 'E-mail de recuperação disparado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })

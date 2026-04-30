@@ -15,7 +15,10 @@ export class HttpMetricsInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse();
     const startTime = Date.now();
     const method: string = req.method ?? 'UNKNOWN';
-    const route: string = (req.routerPath ?? req.routeOptions?.url ?? req.url ?? 'unknown') as string;
+    const route: string = (req.routerPath ??
+      req.routeOptions?.url ??
+      req.url ??
+      'unknown') as string;
 
     return next.handle().pipe(
       tap({

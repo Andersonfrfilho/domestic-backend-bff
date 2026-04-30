@@ -75,7 +75,7 @@ describe('Screens Controller (e2e)', () => {
   describe('DELETE /bff/screens/:screenId', () => {
     it('should deactivate a screen', async () => {
       const screenId = 'test-e2e-deactivate';
-      
+
       // Upsert first
       await app.inject({
         method: 'PUT',

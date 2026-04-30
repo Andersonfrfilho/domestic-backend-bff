@@ -39,7 +39,10 @@ describe('NotificationController', () => {
     it('proxies GET /api/v1/notifications/unread-count', () => {
       mockApi.get.mockResolvedValue({ count: 5 });
       const result = controller.unreadCount(HEADERS);
-      expect(mockApi.get).toHaveBeenCalledWith({ path: '/v1/notifications/unread-count', headers: HEADERS });
+      expect(mockApi.get).toHaveBeenCalledWith({
+        path: '/v1/notifications/unread-count',
+        headers: HEADERS,
+      });
       expect(result).resolves.toEqual({ count: 5 });
     });
   });

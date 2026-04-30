@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Inject, NotFoundException, Param, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Put,
+} from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
@@ -105,7 +114,13 @@ export class NavigationController {
             { id: 'search', label: 'Buscar', icon: 'search', route: '/search', visible: true },
             { id: 'dashboard', label: 'Pedidos', icon: 'list', route: '/dashboard', visible: true },
             { id: 'chat', label: 'Chat', icon: 'chat', route: '/chat', visible: true },
-            { id: 'notifications', label: 'Avisos', icon: 'bell', route: '/notifications', visible: true },
+            {
+              id: 'notifications',
+              label: 'Avisos',
+              icon: 'bell',
+              route: '/notifications',
+              visible: true,
+            },
           ],
         },
         header: { title: null, showBack: false, actions: [] },
@@ -114,10 +129,7 @@ export class NavigationController {
   })
   @ApiOkResponse({ description: 'Configuração criada/atualizada', schema: NAV_RESPONSE_SCHEMA })
   @ApiAlternativeErrorResponses({ badRequest: true })
-  upsertNavigation(
-    @Param('screenId') screenId: string,
-    @Body() body: Navigation,
-  ) {
+  upsertNavigation(@Param('screenId') screenId: string, @Body() body: Navigation) {
     return this.service.upsert({ screenId, navigation: body });
   }
 

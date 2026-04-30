@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { ApiClientGetParams, ApiClientPostParams, ApiClientPutParams } from './api-client.types';
+import type {
+  ApiClientGetParams,
+  ApiClientPostParams,
+  ApiClientPutParams,
+} from './api-client.types';
 
 @Injectable()
 export class ApiClientService {

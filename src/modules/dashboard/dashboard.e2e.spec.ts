@@ -23,9 +23,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /bff/dashboard/contractor', () => {
     it('should return 401 if x-user-id is missing', () => {
-      return request(app.getHttpServer())
-        .get('/bff/dashboard/contractor')
-        .expect(401); // Filtro global ou guard de auth deve barrar sem header se ativado
+      return request(app.getHttpServer()).get('/bff/dashboard/contractor').expect(401); // Filtro global ou guard de auth deve barrar sem header se ativado
     });
 
     it('should return contractor dashboard with valid headers', () => {
