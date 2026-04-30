@@ -24,7 +24,7 @@ export class TermsService {
   constructor(private readonly env: EnvironmentProvider) {}
 
   async getCurrentVersion(): Promise<TermsVersionDto | null> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/terms/current`);
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/current`);
 
     if (!response.ok) {
       this.logger.error(`Failed to get current terms version: ${response.status}`);
@@ -35,7 +35,7 @@ export class TermsService {
   }
 
   async listVersions(): Promise<TermsVersionDto[]> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/terms/versions`);
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/versions`);
 
     if (!response.ok) {
       this.logger.error(`Failed to list terms versions: ${response.status}`);
@@ -46,7 +46,7 @@ export class TermsService {
   }
 
   async checkPending(userId: string): Promise<CheckPendingTermsDto> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/terms/check-pending`, {
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/check-pending`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
@@ -61,7 +61,7 @@ export class TermsService {
   }
 
   async acceptTerms(userId: string, termsVersionId?: string): Promise<{ success: boolean; message: string; termsVersion: string }> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/terms/accept`, {
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, termsVersionId }),
