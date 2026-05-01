@@ -6,6 +6,9 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongooseModule.forRootAsync({
       useFactory: () => ({
         uri: process.env.MONGO_URI ?? 'mongodb://localhost:27017/zolve-bff',
+        directConnection: true,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
       }),
     }),
   ],
