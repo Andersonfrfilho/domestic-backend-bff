@@ -196,22 +196,22 @@ export class HomeService {
     const items = Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
     return (items as Record<string, unknown>[]).map((p) => ({
       id: asString(p['id']),
-      businessName: asString(p['business_name']),
-      averageRating: Number(p['average_rating'] ?? 0),
-      reviewCount: Number(p['review_count'] ?? 0),
+      businessName: asString(p['business_name'] ?? p['businessName']),
+      averageRating: Number(p['average_rating'] ?? p['averageRating'] ?? 0),
+      reviewCount: Number(p['review_count'] ?? p['reviewCount'] ?? 0),
       services: Array.isArray(p['services'])
         ? p['services'].map((s: unknown) => {
             const svc = (typeof s === 'object' && s !== null ? s : {}) as Record<string, unknown>;
             return {
-              name: asString(svc['name'] ?? svc['service_name'] ?? s),
-              priceBase: Number(svc['price_base'] ?? 0),
-              priceType: asString(svc['price_type'] ?? 'FIXED'),
+              name: asString(svc['name'] ?? svc['service_name'] ?? svc['serviceName'] ?? s),
+              priceBase: Number(svc['price_base'] ?? svc['priceBase'] ?? 0),
+              priceType: asString(svc['price_type'] ?? svc['priceType'] ?? 'FIXED'),
             };
           })
         : [],
       city: asString(p['city']),
       state: asString(p['state']),
-      isAvailable: Boolean(p['is_available'] ?? false),
+      isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
     }));
   }
 
