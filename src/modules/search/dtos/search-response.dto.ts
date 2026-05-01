@@ -5,6 +5,10 @@ export interface SearchProviderItem {
   reviewCount: number;
   services: Array<{ name: string; priceBase: number; priceType: string }>;
   workLocations: Array<{ city: string; state: string }>;
+  city: string;
+  state: string;
+  latitude: string;
+  longitude: string;
   isAvailable: boolean;
 }
 

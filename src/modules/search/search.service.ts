@@ -92,10 +92,20 @@ export class SearchService {
     const cached = await this.cache.get<SearchResponseDto>(cacheKey);
     if (cached) return cached;
 
-    const [apiResult, screenCfg] = await Promise.all([
+    const [apiResult, screenCfgResult] = await Promise.allSettled([
       this.fetchProviders(params),
       this.screenConfig.getActiveScreen('search'),
     ]);
+
+    const apiData = apiResult.status === 'fulfilled' ? apiResult.value : { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+    const screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
+
+    if (apiResult.status === 'rejected') {
+      this.logger.warn(`Search API failed: ${apiResult.reason}`);
+    }
+    if (screenCfgResult.status === 'rejected') {
+      this.logger.warn(`Search screen config failed: ${screenCfgResult.reason}`);
+    }
 
     const layout: SearchLayoutComponent[] = screenCfg
       ? screenCfg.components
@@ -110,15 +120,13 @@ export class SearchService {
           }))
       : DEFAULT_LAYOUT;
 
-    // Filters podem ser sobrescritos por config no MongoDB futuramente
     const filters = DEFAULT_FILTERS;
 
     const response: SearchResponseDto = {
       layout,
       filters,
-      data: apiResult.data,
-      meta: apiResult.meta,
-      // links are built by CamelCaseResponseInterceptor from meta; nulls are safe defaults
+      data: apiData.data,
+      meta: apiData.meta,
       links: { first: null, last: null, next: null, previous: null },
     };
 
@@ -130,7 +138,6 @@ export class SearchService {
 
   private async fetchProviders(params: SearchRequestDto) {
     const qs = new URLSearchParams();
-    // Suporte a camelCase e snake_case para compatibilidade
     const categoryId = params.categoryId ?? params.category_id;
     const ratingMin = params.ratingMin ?? params.rating_min;
     if (categoryId) qs.set('category_id', categoryId);
@@ -141,51 +148,54 @@ export class SearchService {
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
 
-    try {
-      const data = await this.api.get<{
-        data?: Record<string, unknown>[];
-        meta?: { total?: number; page?: number; limit?: number };
-      }>({ path: `/v1/providers?${qs.toString()}` });
+    const raw = await this.api.get<Record<string, unknown>[] | { data?: Record<string, unknown>[]; meta?: { total?: number; page?: number; limit?: number } }>({
+      path: `/v1/providers?${qs.toString()}`,
+    });
 
-      const items: SearchProviderItem[] = (data.data ?? []).map((p) => ({
-        id: asString(p['id']),
-        businessName: asString(p['business_name']),
-        averageRating: Number(p['average_rating'] ?? 0),
-        reviewCount: Number(p['review_count'] ?? 0),
-        services: Array.isArray(p['services'])
-          ? p['services'].map((s) => {
-              const svc = (typeof s === 'object' && s !== null ? s : {}) as Record<string, unknown>;
-              return {
-                name: asString(svc['name']),
-                priceBase: Number(svc['price_base'] ?? 0),
-                priceType: asString(svc['price_type']),
-              };
-            })
-          : [],
-        workLocations: Array.isArray(p['work_locations'])
-          ? p['work_locations'].map((w) => {
-              const loc = (typeof w === 'object' && w !== null ? w : {}) as Record<string, unknown>;
-              return {
-                city: asString(loc['city']),
-                state: asString(loc['state']),
-              };
-            })
-          : [],
-        isAvailable: Boolean(p['is_available'] ?? false),
-      }));
+    const items: unknown[] = Array.isArray(raw) ? raw : (raw.data ?? []);
+    const rawMeta = Array.isArray(raw) ? undefined : raw.meta;
 
-      const meta = {
-        page: data.meta?.page ?? params.page ?? 1,
-        limit: data.meta?.limit ?? params.limit ?? 20,
-        total: data.meta?.total ?? items.length,
-        totalPages: Math.ceil((data.meta?.total ?? items.length) / (params.limit ?? 20)),
-      };
+    const data: SearchProviderItem[] = items.map((p) => ({
+      id: asString(p['id']),
+      businessName: asString(p['business_name'] ?? p['businessName']),
+      averageRating: Number(p['average_rating'] ?? p['averageRating'] ?? 0),
+      reviewCount: Number(p['review_count'] ?? p['reviewCount'] ?? 0),
+      services: Array.isArray(p['services'])
+        ? p['services'].map((s) => {
+            const svc = (typeof s === 'object' && s !== null ? s : {}) as Record<string, unknown>;
+            return {
+              name: asString(svc['name'] ?? svc['service_name'] ?? svc['serviceName']),
+              priceBase: Number(svc['price_base'] ?? svc['priceBase'] ?? 0),
+              priceType: asString(svc['price_type'] ?? svc['priceType'] ?? 'FIXED'),
+            };
+          })
+        : [],
+      workLocations: Array.isArray(p['work_locations'])
+        ? p['work_locations'].map((w) => {
+            const loc = (typeof w === 'object' && w !== null ? w : {}) as Record<string, unknown>;
+            return {
+              city: asString(loc['city']),
+              state: asString(loc['state']),
+            };
+          })
+        : [],
+      city: asString(p['city']),
+      state: asString(p['state']),
+      latitude: asString(p['latitude']),
+      longitude: asString(p['longitude']),
+      isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
+    }));
 
-      return { data: items, meta };
-    } catch (err) {
-      this.logger.warn('Failed to fetch providers for search', err);
-      return { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
-    }
+    const total = rawMeta?.total ?? data.length;
+    const limit = params.limit ?? 20;
+    const meta = {
+      page: rawMeta?.page ?? params.page ?? 1,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
+
+    return { data, meta };
   }
 
   private hashParams(params: SearchRequestDto): string {
