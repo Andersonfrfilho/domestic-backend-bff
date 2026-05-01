@@ -52,6 +52,8 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     ],
     city: 'São Paulo',
     state: 'SP',
+    latitude: '-23.550520',
+    longitude: '-46.633308',
     isAvailable: true,
   },
   {
@@ -65,6 +67,8 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     ],
     city: 'São Paulo',
     state: 'SP',
+    latitude: '-23.550520',
+    longitude: '-46.633308',
     isAvailable: true,
   },
   {
@@ -78,6 +82,8 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     ],
     city: 'Guarulhos',
     state: 'SP',
+    latitude: '-23.462778',
+    longitude: '-46.533333',
     isAvailable: true,
   },
 ];
