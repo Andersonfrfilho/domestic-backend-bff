@@ -211,6 +211,8 @@ export class HomeService {
         : [],
       city: asString(p['city']),
       state: asString(p['state']),
+      latitude: asString(p['latitude']),
+      longitude: asString(p['longitude']),
       isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
     }));
   }

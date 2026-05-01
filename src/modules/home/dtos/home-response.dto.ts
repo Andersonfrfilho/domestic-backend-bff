@@ -20,6 +20,8 @@ export interface FeaturedProvider {
   services: ProviderService[];
   city: string;
   state: string;
+  latitude: string;
+  longitude: string;
   isAvailable: boolean;
 }
 
