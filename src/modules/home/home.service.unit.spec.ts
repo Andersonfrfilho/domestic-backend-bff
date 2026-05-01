@@ -85,10 +85,30 @@ describe('HomeService', () => {
     expect(result.layout.length).toBeGreaterThan(0);
   });
 
-  it('returns empty arrays when API fails', async () => {
+  it('returns fallback data when API fails', async () => {
     api.get.mockRejectedValue(new Error('timeout'));
     const result = await service.getHome();
-    expect(result.featuredCategories).toEqual([]);
-    expect(result.featuredProviders).toEqual([]);
+    expect(result.featuredCategories.length).toBeGreaterThan(0);
+    expect(result.featuredProviders.length).toBeGreaterThan(0);
+  });
+
+  it('returns partial fallback when only categories API fails', async () => {
+    api.get.mockImplementation(({ path }: { path: string }) => {
+      if (path.includes('categories')) return Promise.reject(new Error('timeout'));
+      return Promise.resolve({ data: [{ id: 'p1', businessName: 'Maria Faxina' }] });
+    });
+    const result = await service.getHome();
+    expect(result.featuredCategories.length).toBeGreaterThan(0);
+    expect(result.featuredProviders).toHaveLength(1);
+  });
+
+  it('returns partial fallback when only providers API fails', async () => {
+    api.get.mockImplementation(({ path }: { path: string }) => {
+      if (path.includes('categories')) return Promise.resolve([{ id: 'c1', name: 'Limpeza' }]);
+      return Promise.reject(new Error('timeout'));
+    });
+    const result = await service.getHome();
+    expect(result.featuredCategories).toHaveLength(1);
+    expect(result.featuredProviders.length).toBeGreaterThan(0);
   });
 });
