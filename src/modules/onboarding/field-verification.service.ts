@@ -1,8 +1,6 @@
-import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { ApiClientService } from '../shared/api-client/api-client.service';
-
-import { RateLimitService } from './rate-limit.service';
 
 export interface VerificationResult {
   available: boolean;
@@ -14,48 +12,18 @@ export interface VerificationResult {
 export class FieldVerificationService {
   private readonly logger = new Logger(FieldVerificationService.name);
 
-  private readonly fieldConfig = {
-    email: { max: 5, windowMs: 60000, blockDurationMs: 300000 },
-    phone: { max: 5, windowMs: 60000, blockDurationMs: 300000 },
-    document: { max: 3, windowMs: 60000, blockDurationMs: 600000 },
-  } as const;
-
   constructor(
     private readonly apiClient: ApiClientService,
-    private readonly rateLimit: RateLimitService,
   ) {}
 
-  async verifyEmail(ip: string, email: string): Promise<VerificationResult> {
-    const rateKey = `email:${ip}`;
-    const config = this.fieldConfig.email;
-
-    const rateResult = await this.rateLimit.check(rateKey, {
-      windowMs: config.windowMs,
-      max: config.max,
-      blockDurationMs: config.blockDurationMs,
-    });
-
-    if (!rateResult.allowed) {
-      this.logger.warn(`Rate limit exceeded for email verification from IP: ${ip}`);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Muitas tentativas. Tente novamente em alguns minutos.',
-          field: 'email',
-          retryAfter: rateResult.retryAfter,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
+  async verifyEmail(email: string): Promise<VerificationResult> {
     const normalized = email.toLowerCase().trim();
 
     try {
       const exists = await this.checkEmailExists(normalized);
       if (exists) {
         throw new ConflictException({
-          statusCode: HttpStatus.CONFLICT,
+          statusCode: 409,
           error: 'EMAIL_ALREADY_EXISTS',
           message: 'E-mail já está em uso',
           field: 'email',
@@ -69,37 +37,14 @@ export class FieldVerificationService {
     }
   }
 
-  async verifyPhone(ip: string, phone: string): Promise<VerificationResult> {
-    const rateKey = `phone:${ip}`;
-    const config = this.fieldConfig.phone;
-
-    const rateResult = await this.rateLimit.check(rateKey, {
-      windowMs: config.windowMs,
-      max: config.max,
-      blockDurationMs: config.blockDurationMs,
-    });
-
-    if (!rateResult.allowed) {
-      this.logger.warn(`Rate limit exceeded for phone verification from IP: ${ip}`);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Muitas tentativas. Tente novamente em alguns minutos.',
-          field: 'phone',
-          retryAfter: rateResult.retryAfter,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
+  async verifyPhone(phone: string): Promise<VerificationResult> {
     const normalized = phone.replace(/\D/g, '');
 
     try {
       const exists = await this.checkPhoneExists(normalized);
       if (exists) {
         throw new ConflictException({
-          statusCode: HttpStatus.CONFLICT,
+          statusCode: 409,
           error: 'PHONE_ALREADY_EXISTS',
           message: 'Telefone já está cadastrado',
           field: 'phone',
@@ -113,37 +58,14 @@ export class FieldVerificationService {
     }
   }
 
-  async verifyDocument(ip: string, document: string): Promise<VerificationResult> {
-    const rateKey = `document:${ip}`;
-    const config = this.fieldConfig.document;
-
-    const rateResult = await this.rateLimit.check(rateKey, {
-      windowMs: config.windowMs,
-      max: config.max,
-      blockDurationMs: config.blockDurationMs,
-    });
-
-    if (!rateResult.allowed) {
-      this.logger.warn(`Rate limit exceeded for document verification from IP: ${ip}`);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Muitas tentativas. Tente novamente em alguns minutos.',
-          field: 'document',
-          retryAfter: rateResult.retryAfter,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
+  async verifyDocument(document: string): Promise<VerificationResult> {
     const normalized = document.replace(/[^a-zA-Z0-9]/g, '');
 
     try {
       const exists = await this.checkDocumentExists(normalized);
       if (exists) {
         throw new ConflictException({
-          statusCode: HttpStatus.CONFLICT,
+          statusCode: 409,
           error: 'DOCUMENT_ALREADY_EXISTS',
           message: 'Documento já está cadastrado',
           field: 'document',

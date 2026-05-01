@@ -6,17 +6,15 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
-import { FieldVerificationService, RateLimitExceededError } from './field-verification.service';
+import { FieldVerificationService } from './field-verification.service';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
@@ -107,12 +105,8 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Email disponível.', type: FieldVerificationResponseDto })
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
-  async verifyEmail(
-    @Req() req: Request,
-    @Body() body: VerifyEmailRequestDto,
-  ): Promise<FieldVerificationResponseDto> {
-    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-    return this.fieldVerificationService.verifyEmail(ip, body.email);
+  async verifyEmail(@Body() body: VerifyEmailRequestDto): Promise<FieldVerificationResponseDto> {
+    return this.fieldVerificationService.verifyEmail(body.email);
   }
 
   @Post('verify/phone')
@@ -121,25 +115,17 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Telefone disponível.', type: FieldVerificationResponseDto })
   @ApiResponse({ status: 409, description: 'Telefone já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
-  async verifyPhone(
-    @Req() req: Request,
-    @Body() body: VerifyPhoneRequestDto,
-  ): Promise<FieldVerificationResponseDto> {
-    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-    return this.fieldVerificationService.verifyPhone(ip, body.phone);
+  async verifyPhone(@Body() body: VerifyPhoneRequestDto): Promise<FieldVerificationResponseDto> {
+    return this.fieldVerificationService.verifyPhone(body.phone);
   }
 
   @Post('verify/document')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verificar documento', description: 'Valida se CPF ou CNPJ está disponível e é válido.' })
+  @ApiOperation({ summary: 'Verificar documento', description: 'Valida se CPF ou CNPJ está disponível.' })
   @ApiResponse({ status: 200, description: 'Documento disponível.', type: FieldVerificationResponseDto })
   @ApiResponse({ status: 409, description: 'Documento já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
-  async verifyDocument(
-    @Req() req: Request,
-    @Body() body: VerifyDocumentRequestDto,
-  ): Promise<FieldVerificationResponseDto> {
-    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-    return this.fieldVerificationService.verifyDocument(ip, body.document);
+  async verifyDocument(@Body() body: VerifyDocumentRequestDto): Promise<FieldVerificationResponseDto> {
+    return this.fieldVerificationService.verifyDocument(body.document);
   }
 }
