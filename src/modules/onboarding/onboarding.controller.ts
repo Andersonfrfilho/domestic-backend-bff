@@ -6,24 +6,31 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
+import { FieldVerificationService, RateLimitExceededError } from './field-verification.service';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
 import { CepResponseDto } from './dtos/cep-response.dto';
+import { FieldVerificationResponseDto } from './dtos/field-verification-response.dto';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
 import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationResponseDto } from './dtos/verification-response.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
+import { VerifyDocumentRequestDto } from './dtos/verify-document-request.dto';
+import { VerifyEmailRequestDto } from './dtos/verify-email-request.dto';
+import { VerifyPhoneRequestDto } from './dtos/verify-phone-request.dto';
 
 @ApiTags('Onboarding')
 @Controller('bff/onboarding')
@@ -33,6 +40,7 @@ export class OnboardingController {
     private readonly verificationService: VerificationService,
     private readonly documentService: DocumentService,
     private readonly cepService: CepService,
+    private readonly fieldVerificationService: FieldVerificationService,
   ) {}
 
   @Post('register')
@@ -91,5 +99,47 @@ export class OnboardingController {
   @ApiResponse({ status: 404, description: 'CEP não encontrado.' })
   async lookupCep(@Param('cep') cep: string): Promise<CepResponseDto> {
     return this.cepService.lookupCep(cep);
+  }
+
+  @Post('verify/email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar email', description: 'Valida se email está disponível para cadastro.' })
+  @ApiResponse({ status: 200, description: 'Email disponível.', type: FieldVerificationResponseDto })
+  @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
+  @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  async verifyEmail(
+    @Req() req: Request,
+    @Body() body: VerifyEmailRequestDto,
+  ): Promise<FieldVerificationResponseDto> {
+    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    return this.fieldVerificationService.verifyEmail(ip, body.email);
+  }
+
+  @Post('verify/phone')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar telefone', description: 'Valida se telefone está disponível para cadastro.' })
+  @ApiResponse({ status: 200, description: 'Telefone disponível.', type: FieldVerificationResponseDto })
+  @ApiResponse({ status: 409, description: 'Telefone já cadastrado.' })
+  @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  async verifyPhone(
+    @Req() req: Request,
+    @Body() body: VerifyPhoneRequestDto,
+  ): Promise<FieldVerificationResponseDto> {
+    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    return this.fieldVerificationService.verifyPhone(ip, body.phone);
+  }
+
+  @Post('verify/document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar documento', description: 'Valida se CPF ou CNPJ está disponível e é válido.' })
+  @ApiResponse({ status: 200, description: 'Documento disponível.', type: FieldVerificationResponseDto })
+  @ApiResponse({ status: 409, description: 'Documento já cadastrado.' })
+  @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  async verifyDocument(
+    @Req() req: Request,
+    @Body() body: VerifyDocumentRequestDto,
+  ): Promise<FieldVerificationResponseDto> {
+    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    return this.fieldVerificationService.verifyDocument(ip, body.document);
   }
 }

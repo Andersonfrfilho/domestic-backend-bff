@@ -7,8 +7,10 @@ import { EnvironmentProvider } from '@config/providers/environment.provider';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
+import { FieldVerificationService } from './field-verification.service';
 import { GeocodingService } from '@modules/auth/geocoding.service';
 import { OnboardingController } from './onboarding.controller';
+import { RateLimitService } from './rate-limit.service';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
@@ -23,6 +25,8 @@ import { VerificationService } from './verification.service';
     GeocodingService,
     EnvironmentProvider,
     ApiClientService,
+    RateLimitService,
+    FieldVerificationService,
   ],
   exports: [RegistrationService, VerificationService, DocumentService, CepService],
 })
