@@ -152,7 +152,7 @@ export class SearchService {
       path: `/v1/providers?${qs.toString()}`,
     });
 
-    const items: unknown[] = Array.isArray(raw) ? raw : (raw.data ?? []);
+    const items: Record<string, unknown>[] = Array.isArray(raw) ? raw : (raw.data ?? []);
     const rawMeta = Array.isArray(raw) ? undefined : raw.meta;
 
     const data: SearchProviderItem[] = items.map((p) => ({
