@@ -143,7 +143,7 @@ export class RegistrationService implements RegistrationServiceInterface {
   }
 
   private async createApiUser(dto: RegisterRequestDto, keycloakId: string): Promise<void> {
-    const apiUrl = `${this.env.apiBaseUrl}/users`;
+    const apiUrl = `${this.env.apiBaseUrl}/onboarding/register`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -154,15 +154,18 @@ export class RegistrationService implements RegistrationServiceInterface {
         firstName: dto.firstName,
         lastName: dto.lastName,
         phone: dto.phone,
+        password: dto.password,
         ...(dto.cpf ? { cpf: dto.cpf } : {}),
       }),
     });
 
     if (!response.ok) {
-      this.logProvider.warn({
-        message: `API user creation returned ${response.status}, continuing anyway`,
+      const errorText = await response.text();
+      this.logProvider.error({
+        message: `API user creation failed: ${response.status} - ${errorText}`,
         context: 'RegistrationService.createApiUser',
       });
+      throw AppErrorFactory.internalServer({ message: 'Falha ao criar usuário na API' });
     }
   }
 }
