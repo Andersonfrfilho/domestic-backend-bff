@@ -14,6 +14,8 @@ import { AppError } from '@modules/error';
 import { APP_ERROR_TYPE } from '@modules/error/filters/error-filter.constant';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
+const EXCLUDED_LOG_PATHS = ['/health', '/metrics', '/docs'];
+
 @Catch()
 @Injectable()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -93,6 +95,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const requestId = this.getRequestId(request);
     response.header('x-request-id', requestId);
 
+    const isExcludedPath = EXCLUDED_LOG_PATHS.some((path) => request.url.startsWith(path));
+
     let details: unknown;
 
     try {
@@ -114,18 +118,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
           requestId,
         });
 
-        this.logResponse(exception, request, responseBody);
+        if (!isExcludedPath) {
+          this.logResponse(exception, request, responseBody);
+        }
         response.status(status).send(responseBody);
         return;
       }
 
-      this.handleNonAppError(exception, request, response, requestId);
+      this.handleNonAppError(exception, request, response, requestId, isExcludedPath);
     } catch (sendError) {
       this.handleFilterError(sendError);
     }
   }
 
-  private handleNonAppError(exception: unknown, request: FastifyRequest, response: FastifyReply, requestId: string) {
+  private handleNonAppError(exception: unknown, request: FastifyRequest, response: FastifyReply, requestId: string, isExcludedPath = false) {
     const status = this.getStatus(exception);
     const message = this.getMessage(exception);
     let code = 'INTERNAL_ERROR';
@@ -152,7 +158,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       requestId,
     });
 
-    this.logResponse(exception as Error, request, errorResponseBody);
+    if (!isExcludedPath) {
+      this.logResponse(exception as Error, request, errorResponseBody);
+    }
     response.status(status).send(errorResponseBody);
   }
 
