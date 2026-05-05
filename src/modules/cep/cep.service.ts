@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
 export interface CepResult {
   cep: string;
@@ -37,8 +38,8 @@ export class CepService {
         return null;
       }
 
-      const data = (await response.json()) as CepResult & { erro?: boolean };
-      if (data.erro) {
+      const data = await safeJsonParse<CepResult & { erro?: boolean }>(response);
+      if (!data || data.erro) {
         this.logProvider.warn({ message: 'CEP not found', context: 'CepService.search', params: { cep } });
         return null;
       }

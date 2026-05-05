@@ -1,8 +1,11 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { AppError } from '@modules/error/app.error';
+import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { GeocodingService } from '@modules/auth/geocoding.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { CepServiceInterface } from './interfaces/cep-service.interface';
 import { CepResponseDto } from './dtos/cep-response.dto';
 
@@ -18,27 +21,27 @@ export class CepService implements CepServiceInterface {
     const cleanCep = cep.replace(/\D/g, '');
 
     if (cleanCep.length !== 8) {
-      throw new BadRequestException('CEP deve conter 8 dígitos');
+      throw AppErrorFactory.validation({ message: 'CEP deve conter 8 dígitos' });
     }
 
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
 
       if (!response.ok) {
-        throw new Error(`ViaCEP request failed: ${response.status}`);
+        throw AppErrorFactory.internalServer({ message: `ViaCEP request failed: ${response.status}` });
       }
 
-      const data = (await response.json()) as {
+      const data = await safeJsonParse<{
         cep: string;
         logradouro: string;
         bairro: string;
         localidade: string;
         uf: string;
         erro?: boolean;
-      };
+      }>(response);
 
-      if (data.erro) {
-        throw new BadRequestException('CEP não encontrado');
+      if (!data || data.erro) {
+        throw AppErrorFactory.notFound({ message: 'CEP não encontrado', code: 'CEP_NOT_FOUND' });
       }
 
       const geocodeResult = await this.geocoding.geocode({
@@ -64,8 +67,8 @@ export class CepService implements CepServiceInterface {
         context: 'CepService.lookupCep',
       });
 
-      if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException('Falha ao consultar CEP');
+      if (error instanceof AppError) throw error;
+      throw AppErrorFactory.internalServer({ message: 'Falha ao consultar CEP' });
     }
   }
 }

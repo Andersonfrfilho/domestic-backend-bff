@@ -1,8 +1,10 @@
-import { Injectable, Inject, InternalServerErrorException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
+import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { RegistrationServiceInterface } from './interfaces/registration-service.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
@@ -41,11 +43,10 @@ export class RegistrationService implements RegistrationServiceInterface {
       });
 
       if (error.message?.includes('409') || error.message?.includes('already exists')) {
-        throw new ConflictException('E-mail já está em uso');
+        throw AppErrorFactory.conflict({ message: 'E-mail já está em uso', code: 'EMAIL_ALREADY_EXISTS' });
       }
 
-      if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Falha ao criar usuário');
+      throw AppErrorFactory.internalServer({ message: 'Falha ao criar usuário' });
     }
   }
 
@@ -64,10 +65,13 @@ export class RegistrationService implements RegistrationServiceInterface {
     });
 
     if (!response.ok) {
-      throw new Error(`Keycloak admin token request failed: ${response.status}`);
+      throw AppErrorFactory.internalServer({ message: `Keycloak admin token request failed: ${response.status}` });
     }
 
-    const data = (await response.json()) as { access_token: string };
+    const data = await safeJsonParse<{ access_token: string }>(response);
+    if (!data?.access_token) {
+      throw AppErrorFactory.internalServer({ message: 'Keycloak admin token response missing access_token' });
+    }
     return data.access_token;
   }
 
@@ -103,7 +107,7 @@ export class RegistrationService implements RegistrationServiceInterface {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Keycloak user creation failed: ${response.status} - ${errorText}`);
+      throw AppErrorFactory.internalServer({ message: `Keycloak user creation failed: ${response.status} - ${errorText}` });
     }
 
     const locationHeader = response.headers.get('location');
@@ -112,7 +116,7 @@ export class RegistrationService implements RegistrationServiceInterface {
     if (!keycloakId) {
       const userId = await this.getUserIdByEmail(token, dto.email);
       if (!userId) {
-        throw new Error('User created but ID not found');
+        throw AppErrorFactory.internalServer({ message: 'User created but ID not found' });
       }
       return userId;
     }
@@ -131,11 +135,11 @@ export class RegistrationService implements RegistrationServiceInterface {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch user by email');
+      throw AppErrorFactory.internalServer({ message: 'Failed to fetch user by email' });
     }
 
-    const users = (await response.json()) as { id: string }[];
-    return users.length > 0 ? users[0].id : null;
+    const users = await safeJsonParse<{ id: string }[]>(response);
+    return users && users.length > 0 ? users[0].id : null;
   }
 
   private async createApiUser(dto: RegisterRequestDto, keycloakId: string): Promise<void> {

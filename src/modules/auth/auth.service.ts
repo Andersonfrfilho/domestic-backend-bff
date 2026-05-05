@@ -1,6 +1,9 @@
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { AppError } from '@modules/error/app.error';
+import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
 
 @Injectable()
@@ -17,15 +20,15 @@ export class AuthService {
       const userId = await this.getUserIdByEmail(adminToken, email);
       
       if (!userId) {
-        throw new NotFoundException('Usuário não encontrado');
+        throw AppErrorFactory.notFound({ message: 'Usuário não encontrado', code: 'USER_NOT_FOUND' });
       }
 
       await this.triggerResetPasswordEmail(adminToken, userId);
       this.logProvider.info({ message: `Password reset triggered for user: ${email}`, context: 'AuthService.forgotPassword' });
     } catch (error) {
       this.logProvider.error({ message: `Failed to process forgot password for ${email}: ${error.message}`, context: 'AuthService.forgotPassword' });
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Falha ao processar recuperação de senha');
+      if (error instanceof AppError) throw error;
+      throw AppErrorFactory.internalServer({ message: 'Falha ao processar recuperação de senha' });
     }
   }
 
@@ -44,10 +47,13 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to obtain Keycloak admin token');
+      throw AppErrorFactory.internalServer({ message: 'Failed to obtain Keycloak admin token' });
     }
 
-    const data = await response.json() as { access_token: string };
+    const data = await safeJsonParse<{ access_token: string }>(response);
+    if (!data?.access_token) {
+      throw AppErrorFactory.internalServer({ message: 'Keycloak admin token response missing access_token' });
+    }
     return data.access_token;
   }
 
@@ -62,11 +68,11 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch user by email');
+      throw AppErrorFactory.internalServer({ message: 'Failed to fetch user by email' });
     }
 
-    const users = await response.json() as { id: string }[];
-    return users.length > 0 ? users[0].id : null;
+    const users = await safeJsonParse<{ id: string }[]>(response);
+    return users && users.length > 0 ? users[0].id : null;
   }
 
   private async triggerResetPasswordEmail(token: string, userId: string): Promise<void> {
@@ -82,7 +88,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to trigger reset password email');
+      throw AppErrorFactory.internalServer({ message: 'Failed to trigger reset password email' });
     }
   }
 }

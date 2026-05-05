@@ -1,8 +1,10 @@
-import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { DocumentServiceInterface } from './interfaces/document-service.interface';
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
 
@@ -39,10 +41,13 @@ export class DocumentService implements DocumentServiceInterface {
           message: `Document upload returned ${response.status}`,
           context: 'DocumentService.uploadDocument',
         });
-        throw new Error(`API error ${response.status} on document upload`);
+        throw AppErrorFactory.internalServer({ message: `API error ${response.status} on document upload` });
       }
 
-      const data = (await response.json()) as { id: string; url: string };
+      const data = await safeJsonParse<{ id: string; url: string }>(response);
+      if (!data) {
+        throw AppErrorFactory.internalServer({ message: 'Document upload response was empty or invalid' });
+      }
 
       this.logProvider.info({
         message: `Document uploaded successfully for user ${keycloakId}`,
@@ -59,7 +64,7 @@ export class DocumentService implements DocumentServiceInterface {
         message: `Failed to upload document for user ${keycloakId}: ${error.message}`,
         context: 'DocumentService.uploadDocument',
       });
-      throw new InternalServerErrorException('Falha ao enviar documento');
+      throw AppErrorFactory.internalServer({ message: 'Falha ao enviar documento' });
     }
   }
 

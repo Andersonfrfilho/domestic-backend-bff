@@ -1,8 +1,10 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
+import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { VerificationServiceInterface } from './interfaces/verification-service.interface';
 import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
@@ -52,7 +54,7 @@ export class VerificationService implements VerificationServiceInterface {
         message: `Failed to send verification code: ${error.message}`,
         context: 'VerificationService.sendCode',
       });
-      throw new BadRequestException('Falha ao enviar código de verificação');
+      throw AppErrorFactory.businessLogic({ message: 'Falha ao enviar código de verificação', code: 'VERIFICATION_SEND_FAILED' });
     }
   }
 
@@ -97,7 +99,7 @@ export class VerificationService implements VerificationServiceInterface {
         message: `Failed to verify code: ${error.message}`,
         context: 'VerificationService.verifyCode',
       });
-      throw new BadRequestException('Falha ao verificar código');
+      throw AppErrorFactory.businessLogic({ message: 'Falha ao verificar código', code: 'VERIFICATION_VERIFY_FAILED' });
     }
   }
 
@@ -118,7 +120,7 @@ export class VerificationService implements VerificationServiceInterface {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to send email code: ${response.status}`);
+      throw AppErrorFactory.internalServer({ message: `Failed to send email code: ${response.status}` });
     }
   }
 
@@ -130,7 +132,7 @@ export class VerificationService implements VerificationServiceInterface {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to send SMS code: ${response.status}`);
+      throw AppErrorFactory.internalServer({ message: `Failed to send SMS code: ${response.status}` });
     }
   }
 
@@ -149,7 +151,7 @@ export class VerificationService implements VerificationServiceInterface {
       return false;
     }
 
-    const data = (await response.json()) as { verified: boolean };
-    return data.verified;
+    const data = await safeJsonParse<{ verified: boolean }>(response);
+    return data?.verified ?? false;
   }
 }

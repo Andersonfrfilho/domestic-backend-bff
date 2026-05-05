@@ -1,6 +1,7 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
 import { EnvironmentProvider } from '@config/providers/environment.provider';
 
@@ -35,7 +36,7 @@ export class TermsService {
       throw new BadRequestException('Falha ao obter versão atual dos termos');
     }
 
-    return response.json() as Promise<TermsVersionDto | null>;
+    return safeJsonParse<TermsVersionDto | null>(response);
   }
 
   async listVersions(): Promise<TermsVersionDto[]> {
@@ -46,7 +47,11 @@ export class TermsService {
       throw new BadRequestException('Falha ao listar versões dos termos');
     }
 
-    return response.json() as Promise<TermsVersionDto[]>;
+    const result = await safeJsonParse<TermsVersionDto[]>(response);
+    if (!result) {
+      throw new BadRequestException('Empty response from terms versions');
+    }
+    return result;
   }
 
   async checkPending(userId: string): Promise<CheckPendingTermsDto> {
@@ -61,7 +66,11 @@ export class TermsService {
       throw new BadRequestException('Falha ao verificar termos pendentes');
     }
 
-    return response.json() as Promise<CheckPendingTermsDto>;
+    const result = await safeJsonParse<CheckPendingTermsDto>(response);
+    if (!result) {
+      throw new BadRequestException('Empty response from check pending terms');
+    }
+    return result;
   }
 
   async acceptTerms(userId: string, termsVersionId?: string): Promise<{ success: boolean; message: string; termsVersion: string }> {
@@ -76,6 +85,10 @@ export class TermsService {
       throw new BadRequestException('Falha ao aceitar termos');
     }
 
-    return response.json() as Promise<{ success: boolean; message: string; termsVersion: string }>;
+    const result = await safeJsonParse<{ success: boolean; message: string; termsVersion: string }>(response);
+    if (!result) {
+      throw new BadRequestException('Empty response from accept terms');
+    }
+    return result;
   }
 }
