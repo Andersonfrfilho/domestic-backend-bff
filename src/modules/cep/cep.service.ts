@@ -27,26 +27,26 @@ export class CepService {
   async search(cep: string): Promise<CepResult | null> {
     const digits = cep.replace(/\D/g, '');
     if (digits.length !== 8) {
-      this.logProvider.warn({ message: 'Invalid CEP format', context: 'CepService.search', params: { cep } });
+      this.logProvider.warn({ message: 'Invalid CEP format', context: 'CepService.search', meta: { cep } });
       return null;
     }
 
     try {
       const response = await fetch(`${this.viaCepBaseUrl}/${digits}/json/`);
       if (!response.ok) {
-        this.logProvider.warn({ message: 'ViaCEP API returned non-OK status', context: 'CepService.search', params: { status: response.status } });
+        this.logProvider.warn({ message: 'ViaCEP API returned non-OK status', context: 'CepService.search', meta: { status: response.status } });
         return null;
       }
 
       const data = await safeJsonParse<CepResult & { erro?: boolean }>(response);
       if (!data || data.erro) {
-        this.logProvider.warn({ message: 'CEP not found', context: 'CepService.search', params: { cep } });
+        this.logProvider.warn({ message: 'CEP not found', context: 'CepService.search', meta: { cep } });
         return null;
       }
 
       return data;
     } catch (error) {
-      this.logProvider.error({ message: 'ViaCEP API call failed', context: 'CepService.search', params: { error } });
+      this.logProvider.error({ message: 'ViaCEP API call failed', context: 'CepService.search', meta: { error } });
       return null;
     }
   }

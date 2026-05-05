@@ -34,8 +34,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logProvider.error({
         message: `Exception caught in filter: ${exceptionMessage}`,
         context: 'HttpExceptionFilter.logResponse',
-        requestId: headerRequestId,
-        params: {
+        meta: {
+          requestId: headerRequestId,
           request: {
             path: request.url,
             method: request.method,

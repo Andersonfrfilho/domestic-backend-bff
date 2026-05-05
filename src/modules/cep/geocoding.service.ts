@@ -33,7 +33,7 @@ export class GeocodingService {
 
   async geocode(params: GeocodeParams): Promise<GeocodeResult | null> {
     if (this.nodeEnv === 'development' || this.nodeEnv === 'test') {
-      this.logProvider.info({ message: '[QA MODE] Mock geocoding', context: 'GeocodingService.geocode', params: { city: params.city, state: params.state } });
+      this.logProvider.info({ message: '[QA MODE] Mock geocoding', context: 'GeocodingService.geocode', meta: { city: params.city, state: params.state } });
       return {
         lat: -23.5505,
         lng: -46.6333,
@@ -50,7 +50,7 @@ export class GeocodingService {
       });
 
       if (!response.ok) {
-        this.logProvider.warn({ message: 'Geocoding API returned non-OK status', context: 'GeocodingService.geocode', params: { status: response.status } });
+        this.logProvider.warn({ message: 'Geocoding API returned non-OK status', context: 'GeocodingService.geocode', meta: { status: response.status } });
         return null;
       }
 
@@ -61,7 +61,7 @@ export class GeocodingService {
       }>;
 
       if (data.length === 0) {
-        this.logProvider.warn({ message: 'No geocoding results', context: 'GeocodingService.geocode', params: { query } });
+        this.logProvider.warn({ message: 'No geocoding results', context: 'GeocodingService.geocode', meta: { query } });
         return null;
       }
 
@@ -71,7 +71,7 @@ export class GeocodingService {
         formattedAddress: data[0].display_name,
       };
     } catch (error) {
-      this.logProvider.error({ message: 'Geocoding failed', context: 'GeocodingService.geocode', params: { error } });
+      this.logProvider.error({ message: 'Geocoding failed', context: 'GeocodingService.geocode', meta: { error } });
       return null;
     }
   }
