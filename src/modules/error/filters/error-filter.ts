@@ -138,6 +138,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let type = 'INTERNAL_SERVER';
     let details: unknown;
 
+    if (status === HttpStatus.NOT_FOUND) {
+      code = 'NOT_FOUND';
+      type = 'NOT_FOUND';
+    }
+
     if (exception instanceof HttpException) {
       const exceptionResponse = exception.getResponse();
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
