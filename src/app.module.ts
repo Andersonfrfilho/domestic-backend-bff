@@ -48,7 +48,7 @@ tsConfigPathsRegister({
     ConfigModule,
     LoggerModule.forRoot({
       level: process.env.LOG_LEVEL || 'info',
-      interceptorExcludedPaths: ['/health', '/metrics'],
+      interceptorExcludedPaths: ['/health', '/metrics', '/docs'],
     }),
     // Infraestrutura BFF
     BffMongoModule,
