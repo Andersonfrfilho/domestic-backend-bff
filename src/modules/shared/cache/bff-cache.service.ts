@@ -24,7 +24,7 @@ export class BffCacheService {
       this.logProvider.error({
         message: 'Redis connection error',
         context: 'BffCacheService.constructor',
-        params: err,
+        meta: { error: err },
       }),
     );
   }
@@ -45,7 +45,7 @@ export class BffCacheService {
       this.logProvider.warn({
         message: `Cache set failed for key ${key}`,
         context: 'BffCacheService.set',
-        params: err,
+        meta: { error: err },
       });
     }
   }
@@ -57,7 +57,7 @@ export class BffCacheService {
       this.logProvider.warn({
         message: `Cache del failed for key ${key}`,
         context: 'BffCacheService.del',
-        params: err,
+        meta: { error: err },
       });
     }
   }

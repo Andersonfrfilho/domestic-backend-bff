@@ -24,7 +24,7 @@ export class VerificationService implements VerificationServiceInterface {
       this.logProvider.info({
         message: `[QA MODE] Verification code generated: ${code}`,
         context: 'VerificationService.sendCode',
-        params: { type: dto.type, destination: dto.destination },
+        meta: { type: dto.type, destination: dto.destination },
       });
 
       return {
@@ -70,7 +70,7 @@ export class VerificationService implements VerificationServiceInterface {
       this.logProvider.info({
         message: '[QA MODE] Verification result',
         context: 'VerificationService.verifyCode',
-        params: {
+        meta: {
           type: dto.type,
           destination: dto.destination,
           code: dto.code,

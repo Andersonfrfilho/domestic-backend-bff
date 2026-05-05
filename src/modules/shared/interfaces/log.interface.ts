@@ -3,15 +3,13 @@ import type { LogLevel } from '@modules/shared/enums/log.enum';
 export interface LogBaseParams {
   message: string;
   context?: string;
-  params?: unknown;
-  requestId?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface LogContext {
   level: LogLevel;
   context: string;
   timestamp: Date;
-  requestId?: string;
   metadata?: Record<string, unknown>;
 }
 

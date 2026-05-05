@@ -120,7 +120,7 @@ export class DashboardService {
       this.logProvider.warn({
         message: `Failed to fetch requests from ${path}`,
         context: 'DashboardService.fetchRequests',
-        params: err,
+        meta: { error: err },
       });
       return [];
     }

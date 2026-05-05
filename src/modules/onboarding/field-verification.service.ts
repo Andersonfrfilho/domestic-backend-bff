@@ -40,7 +40,7 @@ export class FieldVerificationService {
       this.logProvider.error({
         message: `Email verification failed for: ${normalized}`,
         context: 'FieldVerificationService.verifyEmail',
-        params: err,
+        meta: { error: err },
       });
       throw err;
     }
@@ -68,7 +68,7 @@ export class FieldVerificationService {
       this.logProvider.error({
         message: `Phone verification failed for: ${normalized}`,
         context: 'FieldVerificationService.verifyPhone',
-        params: err,
+        meta: { error: err },
       });
       throw err;
     }
@@ -96,7 +96,7 @@ export class FieldVerificationService {
       this.logProvider.error({
         message: `Document verification failed for: ${normalized}`,
         context: 'FieldVerificationService.verifyDocument',
-        params: err,
+        meta: { error: err },
       });
       throw err;
     }
