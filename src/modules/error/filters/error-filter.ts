@@ -30,7 +30,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionMessage = exception instanceof Error ? exception.message : String(exception);
 
       this.logProvider.error({
-        message: 'Exception caught in filter',
+        message: `Exception caught in filter: ${exceptionMessage}`,
         context: 'HttpExceptionFilter.logResponse',
         requestId: headerRequestId,
         params: {

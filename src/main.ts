@@ -28,6 +28,9 @@ tsConfigPathsRegister({
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
+  // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade
+  app.setGlobalPrefix('bff');
+
   // Socket.io adapter para WebSocket (usa Redis Pub/Sub multi-instance)
   app.useWebSocketAdapter(new IoAdapter(app));
 
