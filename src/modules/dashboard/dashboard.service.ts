@@ -1,5 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
@@ -30,9 +32,9 @@ const asString = (value: unknown, fallback = ''): string => {
 
 @Injectable()
 export class DashboardService {
-  private readonly logger = new Logger(DashboardService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
     @Inject(BFF_CACHE_SERVICE)
@@ -115,7 +117,11 @@ export class DashboardService {
         description: (r['description'] as string | null) ?? null,
       }));
     } catch (err) {
-      this.logger.warn(`Failed to fetch requests from ${path}`, err);
+      this.logProvider.warn({
+        message: `Failed to fetch requests from ${path}`,
+        context: 'DashboardService.fetchRequests',
+        params: err,
+      });
       return [];
     }
   }

@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import { ENV_VARS } from '@config/constants';
 
@@ -20,20 +22,18 @@ export interface GeocodeParams {
 
 @Injectable()
 export class GeocodingService {
-  private readonly logger = new Logger(GeocodingService.name);
   private readonly nodeEnv: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
+    private readonly configService: ConfigService,
+  ) {
     this.nodeEnv = this.configService.get<string>(ENV_VARS.NODE_ENV) ?? 'development';
   }
 
   async geocode(params: GeocodeParams): Promise<GeocodeResult | null> {
     if (this.nodeEnv === 'development' || this.nodeEnv === 'test') {
-      this.logger.log('[QA MODE] Mock geocoding for address', {
-        street: params.street,
-        city: params.city,
-        state: params.state,
-      });
+      this.logProvider.info({ message: '[QA MODE] Mock geocoding for address', context: 'GeocodingService.geocode', params: { street: params.street, city: params.city, state: params.state } });
       return {
         lat: -23.5505,
         lng: -46.6333,
@@ -52,7 +52,7 @@ export class GeocodingService {
       });
 
       if (!response.ok) {
-        this.logger.warn('Geocoding API returned non-OK status', { status: response.status });
+        this.logProvider.warn({ message: 'Geocoding API returned non-OK status', context: 'GeocodingService.geocode', params: { status: response.status } });
         return null;
       }
 
@@ -63,7 +63,7 @@ export class GeocodingService {
       }>;
 
       if (data.length === 0) {
-        this.logger.warn('No geocoding results found', { query });
+        this.logProvider.warn({ message: 'No geocoding results found', context: 'GeocodingService.geocode', params: { query } });
         return null;
       }
 
@@ -74,7 +74,7 @@ export class GeocodingService {
         formattedAddress: result.display_name,
       };
     } catch (error) {
-      this.logger.error('Geocoding failed', { error });
+      this.logProvider.error({ message: 'Geocoding failed', context: 'GeocodingService.geocode', params: { error } });
       return null;
     }
   }

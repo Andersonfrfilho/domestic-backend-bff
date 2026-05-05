@@ -1,14 +1,18 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { DocumentServiceInterface } from './interfaces/document-service.interface';
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
 
 @Injectable()
 export class DocumentService implements DocumentServiceInterface {
-  private readonly logger = new Logger(DocumentService.name);
-
-  constructor(private readonly apiClient: ApiClientService) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
+    private readonly apiClient: ApiClientService,
+  ) {}
 
   async uploadDocument(
     keycloakId: string,
@@ -31,13 +35,19 @@ export class DocumentService implements DocumentServiceInterface {
       });
 
       if (!response.ok) {
-        this.logger.warn(`Document upload returned ${response.status}`);
+        this.logProvider.warn({
+          message: `Document upload returned ${response.status}`,
+          context: 'DocumentService.uploadDocument',
+        });
         throw new Error(`API error ${response.status} on document upload`);
       }
 
       const data = (await response.json()) as { id: string; url: string };
 
-      this.logger.log(`Document uploaded successfully for user ${keycloakId}`);
+      this.logProvider.info({
+        message: `Document uploaded successfully for user ${keycloakId}`,
+        context: 'DocumentService.uploadDocument',
+      });
 
       return {
         documentId: data.id,
@@ -45,7 +55,10 @@ export class DocumentService implements DocumentServiceInterface {
         message: 'Documento enviado com sucesso',
       };
     } catch (error) {
-      this.logger.error(`Failed to upload document for user ${keycloakId}: ${error.message}`);
+      this.logProvider.error({
+        message: `Failed to upload document for user ${keycloakId}: ${error.message}`,
+        context: 'DocumentService.uploadDocument',
+      });
       throw new InternalServerErrorException('Falha ao enviar documento');
     }
   }

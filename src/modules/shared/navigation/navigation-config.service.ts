@@ -1,7 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
@@ -45,9 +47,9 @@ export const DEFAULT_NAVIGATION: Navigation = {
 
 @Injectable()
 export class NavigationConfigService {
-  private readonly logger = new Logger(NavigationConfigService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @InjectModel(NavigationConfig.name)
     private readonly model: Model<NavigationConfigDocument>,
     @Inject(BFF_CACHE_SERVICE)
@@ -63,9 +65,10 @@ export class NavigationConfigService {
     try {
       config = await this.model.findOne({ screen_id: screenId, is_active: true }).lean().exec();
     } catch (err) {
-      this.logger.warn(
-        `Failed to get navigation config for ${screenId}: ${err instanceof Error ? err.message : err}`,
-      );
+      this.logProvider.warn({
+        message: `Failed to get navigation config for ${screenId}: ${err instanceof Error ? err.message : err}`,
+        context: 'NavigationConfigService.getNavigation',
+      });
       config = null;
     }
 
@@ -96,7 +99,10 @@ export class NavigationConfigService {
       this.cache.del(CACHE_KEYS.NAVIGATION(screenId)),
       this.cache.del(CACHE_KEYS.APP_CONFIG),
     ]);
-    this.logger.log(`Navigation config deactivated: ${screenId}`);
+    this.logProvider.info({
+      message: `Navigation config deactivated: ${screenId}`,
+      context: 'NavigationConfigService.deactivate',
+    });
   }
 
   async upsert({
@@ -133,7 +139,10 @@ export class NavigationConfigService {
       this.cache.del(CACHE_KEYS.NAVIGATION(screenId)),
       this.cache.del(CACHE_KEYS.APP_CONFIG),
     ]);
-    this.logger.log(`Navigation config upserted: ${screenId}`);
+    this.logProvider.info({
+      message: `Navigation config upserted: ${screenId}`,
+      context: 'NavigationConfigService.upsert',
+    });
     return navigation;
   }
 

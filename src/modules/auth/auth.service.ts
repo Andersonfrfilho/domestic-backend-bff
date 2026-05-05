@@ -1,11 +1,15 @@
-import { Injectable, Logger, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly env: EnvironmentProvider) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
+    private readonly env: EnvironmentProvider,
+  ) {}
 
   async forgotPassword(email: string): Promise<void> {
     try {
@@ -17,9 +21,9 @@ export class AuthService {
       }
 
       await this.triggerResetPasswordEmail(adminToken, userId);
-      this.logger.log(`Password reset triggered for user: ${email}`);
+      this.logProvider.info({ message: `Password reset triggered for user: ${email}`, context: 'AuthService.forgotPassword' });
     } catch (error) {
-      this.logger.error(`Failed to process forgot password for ${email}: ${error.message}`);
+      this.logProvider.error({ message: `Failed to process forgot password for ${email}: ${error.message}`, context: 'AuthService.forgotPassword' });
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException('Falha ao processar recuperação de senha');
     }

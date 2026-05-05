@@ -1,4 +1,6 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, BadRequestException } from '@nestjs/common';
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import { EnvironmentProvider } from '@config/providers/environment.provider';
 
@@ -19,15 +21,17 @@ export interface CheckPendingTermsDto {
 
 @Injectable()
 export class TermsService {
-  private readonly logger = new Logger(TermsService.name);
 
-  constructor(private readonly env: EnvironmentProvider) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
+    private readonly env: EnvironmentProvider,
+  ) {}
 
   async getCurrentVersion(): Promise<TermsVersionDto | null> {
     const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/current`);
 
     if (!response.ok) {
-      this.logger.error(`Failed to get current terms version: ${response.status}`);
+      this.logProvider.error({ message: `Failed to get current terms version: ${response.status}`, context: 'TermsService.getCurrentVersion' });
       throw new BadRequestException('Falha ao obter versão atual dos termos');
     }
 
@@ -38,7 +42,7 @@ export class TermsService {
     const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/versions`);
 
     if (!response.ok) {
-      this.logger.error(`Failed to list terms versions: ${response.status}`);
+      this.logProvider.error({ message: `Failed to list terms versions: ${response.status}`, context: 'TermsService.listVersions' });
       throw new BadRequestException('Falha ao listar versões dos termos');
     }
 
@@ -53,7 +57,7 @@ export class TermsService {
     });
 
     if (!response.ok) {
-      this.logger.error(`Failed to check pending terms: ${response.status}`);
+      this.logProvider.error({ message: `Failed to check pending terms: ${response.status}`, context: 'TermsService.checkPending' });
       throw new BadRequestException('Falha ao verificar termos pendentes');
     }
 
@@ -68,7 +72,7 @@ export class TermsService {
     });
 
     if (!response.ok) {
-      this.logger.error(`Failed to accept terms: ${response.status}`);
+      this.logProvider.error({ message: `Failed to accept terms: ${response.status}`, context: 'TermsService.acceptTerms' });
       throw new BadRequestException('Falha ao aceitar termos');
     }
 

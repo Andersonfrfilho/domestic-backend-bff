@@ -1,6 +1,8 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Inject } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { ApiClientService } from '../shared/api-client/api-client.service';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 export interface VerificationResult {
   available: boolean;
@@ -10,9 +12,9 @@ export interface VerificationResult {
 
 @Injectable()
 export class FieldVerificationService {
-  private readonly logger = new Logger(FieldVerificationService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     private readonly apiClient: ApiClientService,
   ) {}
 
@@ -35,7 +37,11 @@ export class FieldVerificationService {
         });
       }
 
-      this.logger.error(`Email verification failed for: ${normalized}`, err);
+      this.logProvider.error({
+        message: `Email verification failed for: ${normalized}`,
+        context: 'FieldVerificationService.verifyEmail',
+        params: err,
+      });
       throw err;
     }
   }
@@ -59,7 +65,11 @@ export class FieldVerificationService {
         });
       }
 
-      this.logger.error(`Phone verification failed for: ${normalized}`, err);
+      this.logProvider.error({
+        message: `Phone verification failed for: ${normalized}`,
+        context: 'FieldVerificationService.verifyPhone',
+        params: err,
+      });
       throw err;
     }
   }
@@ -83,7 +93,11 @@ export class FieldVerificationService {
         });
       }
 
-      this.logger.error(`Document verification failed for: ${normalized}`, err);
+      this.logProvider.error({
+        message: `Document verification failed for: ${normalized}`,
+        context: 'FieldVerificationService.verifyDocument',
+        params: err,
+      });
       throw err;
     }
   }

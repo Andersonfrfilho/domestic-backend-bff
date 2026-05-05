@@ -1,15 +1,19 @@
-import { Injectable, Logger, InternalServerErrorException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, InternalServerErrorException, ConflictException } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { RegistrationServiceInterface } from './interfaces/registration-service.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
 
 @Injectable()
 export class RegistrationService implements RegistrationServiceInterface {
-  private readonly logger = new Logger(RegistrationService.name);
-
-  constructor(private readonly env: EnvironmentProvider) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
+    private readonly env: EnvironmentProvider,
+  ) {}
 
   async register(dto: RegisterRequestDto): Promise<RegisterResponseDto> {
     try {
@@ -19,7 +23,10 @@ export class RegistrationService implements RegistrationServiceInterface {
 
       await this.createApiUser(dto, keycloakId);
 
-      this.logger.log(`User registered successfully: ${dto.email}`);
+      this.logProvider.info({
+        message: `User registered successfully: ${dto.email}`,
+        context: 'RegistrationService.register',
+      });
 
       return {
         keycloakId,
@@ -28,7 +35,10 @@ export class RegistrationService implements RegistrationServiceInterface {
         message: 'Usuário criado com sucesso',
       };
     } catch (error) {
-      this.logger.error(`Failed to register user ${dto.email}: ${error.message}`);
+      this.logProvider.error({
+        message: `Failed to register user ${dto.email}: ${error.message}`,
+        context: 'RegistrationService.register',
+      });
 
       if (error.message?.includes('409') || error.message?.includes('already exists')) {
         throw new ConflictException('E-mail já está em uso');
@@ -145,7 +155,10 @@ export class RegistrationService implements RegistrationServiceInterface {
     });
 
     if (!response.ok) {
-      this.logger.warn(`API user creation returned ${response.status}, continuing anyway`);
+      this.logProvider.warn({
+        message: `API user creation returned ${response.status}, continuing anyway`,
+        context: 'RegistrationService.createApiUser',
+      });
     }
   }
 }

@@ -1,14 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import type { BffCachePublishParams, BffCacheSetParams } from './bff-cache.types';
 
 @Injectable()
 export class BffCacheService {
-  private readonly logger = new Logger(BffCacheService.name);
   private readonly client: Redis;
 
-  constructor() {
+  constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
+  ) {
     this.client = new Redis({
       host: process.env.CACHE_REDIS_HOST ?? 'localhost',
       port: Number(process.env.CACHE_REDIS_PORT ?? 6379),
@@ -16,7 +20,13 @@ export class BffCacheService {
       lazyConnect: true,
     });
 
-    this.client.on('error', (err) => this.logger.error('Redis connection error', err));
+    this.client.on('error', (err) =>
+      this.logProvider.error({
+        message: 'Redis connection error',
+        context: 'BffCacheService.constructor',
+        params: err,
+      }),
+    );
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -32,7 +42,11 @@ export class BffCacheService {
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
     } catch (err) {
-      this.logger.warn(`Cache set failed for key ${key}`, err);
+      this.logProvider.warn({
+        message: `Cache set failed for key ${key}`,
+        context: 'BffCacheService.set',
+        params: err,
+      });
     }
   }
 
@@ -40,7 +54,11 @@ export class BffCacheService {
     try {
       await this.client.del(key);
     } catch (err) {
-      this.logger.warn(`Cache del failed for key ${key}`, err);
+      this.logProvider.warn({
+        message: `Cache del failed for key ${key}`,
+        context: 'BffCacheService.del',
+        params: err,
+      });
     }
   }
 

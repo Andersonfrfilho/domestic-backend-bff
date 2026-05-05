@@ -1,6 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as crypto from 'node:crypto';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
@@ -9,6 +10,7 @@ import type { ScreenConfig } from '@modules/shared/screen/schemas/screen-config.
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import type {
   FeaturedCategory,
@@ -90,9 +92,9 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
 
 @Injectable()
 export class HomeService {
-  private readonly logger = new Logger(HomeService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
     @Inject(BFF_CACHE_SERVICE)
@@ -129,22 +131,34 @@ export class HomeService {
         .filter(Boolean)
         .join('; ');
 
-      this.logger.warn(`Partial failure fetching home data: ${errors}`);
+      this.logProvider.warn({
+        message: `Partial failure fetching home data: ${errors}`,
+        context: 'HomeService.getHome',
+      });
 
       if (categoriesResult.status === 'rejected') {
-        this.logger.warn('Using fallback categories');
+        this.logProvider.warn({
+          message: 'Using fallback categories',
+          context: 'HomeService.getHome',
+        });
         categories = FALLBACK_CATEGORIES;
       }
 
       if (providersResult.status === 'rejected') {
-        this.logger.warn('Using fallback providers');
+        this.logProvider.warn({
+          message: 'Using fallback providers',
+          context: 'HomeService.getHome',
+        });
         providers = FALLBACK_PROVIDERS;
       }
     }
 
     const isEmpty = categories.length === 0 && providers.length === 0;
     if (isEmpty) {
-      this.logger.warn('No data available, using full fallback');
+      this.logProvider.warn({
+        message: 'No data available, using full fallback',
+        context: 'HomeService.getHome',
+      });
       categories = FALLBACK_CATEGORIES;
       providers = FALLBACK_PROVIDERS;
     }

@@ -1,7 +1,8 @@
 import * as crypto from 'node:crypto';
 
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
@@ -9,6 +10,7 @@ import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.toke
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import type {
   SearchFilter,
@@ -76,9 +78,9 @@ const asString = (value: unknown, fallback = ''): string => {
 
 @Injectable()
 export class SearchService {
-  private readonly logger = new Logger(SearchService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
     @Inject(BFF_CACHE_SERVICE)
@@ -101,10 +103,16 @@ export class SearchService {
     const screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
 
     if (apiResult.status === 'rejected') {
-      this.logger.warn(`Search API failed: ${apiResult.reason}`);
+      this.logProvider.warn({
+        message: `Search API failed: ${apiResult.reason}`,
+        context: 'SearchService.search',
+      });
     }
     if (screenCfgResult.status === 'rejected') {
-      this.logger.warn(`Search screen config failed: ${screenCfgResult.reason}`);
+      this.logProvider.warn({
+        message: `Search screen config failed: ${screenCfgResult.reason}`,
+        context: 'SearchService.search',
+      });
     }
 
     const layout: SearchLayoutComponent[] = screenCfg

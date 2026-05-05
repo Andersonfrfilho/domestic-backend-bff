@@ -1,5 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
 import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
 import type { Navigation } from '@modules/shared/navigation/interfaces/navigation.interface';
@@ -31,9 +33,9 @@ const DEFAULT_VERSION: AppVersionDto = {
 
 @Injectable()
 export class AppConfigService {
-  private readonly logger = new Logger(AppConfigService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @Inject(NAVIGATION_CONFIG_SERVICE)
     private readonly navigationConfig: NavigationConfigService,
     @Inject(BFF_CACHE_SERVICE)
@@ -48,9 +50,10 @@ export class AppConfigService {
     try {
       navigation = await this.navigationConfig.getNavigation('default');
     } catch (err) {
-      this.logger.warn(
-        `Failed to get navigation config, using default: ${err instanceof Error ? err.message : err}`,
-      );
+      this.logProvider.warn({
+        message: `Failed to get navigation config, using default: ${err instanceof Error ? err.message : err}`,
+        context: 'AppConfigService.getAppConfig',
+      });
       navigation = {
         tabBar: {
           visible: true,
@@ -79,7 +82,7 @@ export class AppConfigService {
     };
 
     await this.cache.set({ key: CACHE_KEYS.APP_CONFIG, value: response, ttlSeconds: CACHE_TTL });
-    this.logger.log('App config assembled');
+    this.logProvider.info({ message: 'App config assembled', context: 'AppConfigService.getAppConfig' });
     return response;
   }
 }

@@ -1,14 +1,18 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { GeocodingService } from '@modules/auth/geocoding.service';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { CepServiceInterface } from './interfaces/cep-service.interface';
 import { CepResponseDto } from './dtos/cep-response.dto';
 
 @Injectable()
 export class CepService implements CepServiceInterface {
-  private readonly logger = new Logger(CepService.name);
-
-  constructor(private readonly geocoding: GeocodingService) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
+    private readonly geocoding: GeocodingService,
+  ) {}
 
   async lookupCep(cep: string): Promise<CepResponseDto> {
     const cleanCep = cep.replace(/\D/g, '');
@@ -55,7 +59,10 @@ export class CepService implements CepServiceInterface {
         ...(geocodeResult ? { lat: geocodeResult.lat, lng: geocodeResult.lng } : {}),
       };
     } catch (error) {
-      this.logger.error(`CEP lookup failed for ${cep}: ${error.message}`);
+      this.logProvider.error({
+        message: `CEP lookup failed for ${cep}: ${error.message}`,
+        context: 'CepService.lookupCep',
+      });
 
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('Falha ao consultar CEP');

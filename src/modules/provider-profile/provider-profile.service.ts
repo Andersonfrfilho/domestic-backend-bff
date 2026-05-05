@@ -1,5 +1,7 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
@@ -32,9 +34,9 @@ const toRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ?
 
 @Injectable()
 export class ProviderProfileService {
-  private readonly logger = new Logger(ProviderProfileService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @Inject(API_CLIENT_SERVICE)
     private readonly api: ApiClientService,
     @Inject(BFF_CACHE_SERVICE)
@@ -104,7 +106,10 @@ export class ProviderProfileService {
       });
     } catch (err) {
       const errMsg = err instanceof Error ? `: ${err.message}` : '';
-      this.logger.warn(`Failed to fetch provider ${id}${errMsg}`);
+      this.logProvider.warn({
+        message: `Failed to fetch provider ${id}${errMsg}`,
+        context: 'ProviderProfileService.fetchProvider',
+      });
       return null;
     }
   }
@@ -130,7 +135,10 @@ export class ProviderProfileService {
       }));
     } catch (err) {
       const errMsg = err instanceof Error ? `: ${err.message}` : '';
-      this.logger.warn(`Failed to fetch reviews for provider ${providerId}${errMsg}`);
+      this.logProvider.warn({
+        message: `Failed to fetch reviews for provider ${providerId}${errMsg}`,
+        context: 'ProviderProfileService.fetchReviews',
+      });
       return [];
     }
   }

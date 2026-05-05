@@ -1,15 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { ScreenConfig, ScreenConfigDocument } from './schemas/screen-config.schema';
 import type { ScreenConfigUpsertParams, ScreenConfigUpsertResult } from './screen-config.types';
 
 @Injectable()
 export class ScreenConfigService {
-  private readonly logger = new Logger(ScreenConfigService.name);
-
   constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
     @InjectModel(ScreenConfig.name)
     private readonly model: Model<ScreenConfigDocument>,
   ) {}
@@ -18,9 +20,10 @@ export class ScreenConfigService {
     try {
       return this.model.findOne({ screen_id: screenId, is_active: true }).lean().exec();
     } catch (err) {
-      this.logger.warn(
-        `Failed to get screen config for ${screenId}: ${err instanceof Error ? err.message : err}`,
-      );
+      this.logProvider.warn({
+        message: `Failed to get screen config for ${screenId}: ${err instanceof Error ? err.message : err}`,
+        context: 'ScreenConfigService.getActiveScreen',
+      });
       return null;
     }
   }
@@ -39,7 +42,10 @@ export class ScreenConfigService {
       .lean()
       .exec();
 
-    this.logger.log(`Screen config upserted: ${screenId} v${version}`);
+    this.logProvider.info({
+      message: `Screen config upserted: ${screenId} v${version}`,
+      context: 'ScreenConfigService.upsert',
+    });
     return result as ScreenConfig;
   }
 

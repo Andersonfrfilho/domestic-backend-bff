@@ -1,6 +1,8 @@
-import { Inject, Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
@@ -24,9 +26,9 @@ export type { CreateRoomDto, SendMessageDto } from './chat.types';
 
 @Injectable()
 export class ChatService {
-  private readonly logger = new Logger(ChatService.name);
 
   constructor(
+    @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @InjectModel(ChatRoom.name)
     private readonly roomModel: Model<ChatRoomDocument>,
     @InjectModel(ChatMessage.name)

@@ -1,6 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { VerificationServiceInterface } from './interfaces/verification-service.interface';
 import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
@@ -8,16 +10,19 @@ import { VerificationResponseDto } from './dtos/verification-response.dto';
 
 @Injectable()
 export class VerificationService implements VerificationServiceInterface {
-  private readonly logger = new Logger(VerificationService.name);
-
-  constructor(private readonly env: EnvironmentProvider) {}
+  constructor(
+    @Inject(LOGGER_PROVIDER)
+    private readonly logProvider: LogProviderInterface,
+    private readonly env: EnvironmentProvider,
+  ) {}
 
   async sendCode(dto: VerificationSendRequestDto): Promise<VerificationResponseDto> {
     if (this.env.isDevelopment() || this.env.isTest()) {
       const code = this.generateQaCode(dto);
-      this.logger.log(`[QA MODE] Verification code generated: ${code}`, {
-        type: dto.type,
-        destination: dto.destination,
+      this.logProvider.info({
+        message: `[QA MODE] Verification code generated: ${code}`,
+        context: 'VerificationService.sendCode',
+        params: { type: dto.type, destination: dto.destination },
       });
 
       return {
@@ -33,14 +38,20 @@ export class VerificationService implements VerificationServiceInterface {
         await this.sendSmsCode(dto.destination);
       }
 
-      this.logger.log(`Verification code sent via ${dto.type} to ${dto.destination}`);
+      this.logProvider.info({
+        message: `Verification code sent via ${dto.type} to ${dto.destination}`,
+        context: 'VerificationService.sendCode',
+      });
 
       return {
         success: true,
         message: 'Código de verificação enviado com sucesso',
       };
     } catch (error) {
-      this.logger.error(`Failed to send verification code: ${error.message}`);
+      this.logProvider.error({
+        message: `Failed to send verification code: ${error.message}`,
+        context: 'VerificationService.sendCode',
+      });
       throw new BadRequestException('Falha ao enviar código de verificação');
     }
   }
@@ -54,12 +65,16 @@ export class VerificationService implements VerificationServiceInterface {
 
       const verified = dto.code === expectedCode;
 
-      this.logger.log(`[QA MODE] Verification result`, {
-        type: dto.type,
-        destination: dto.destination,
-        code: dto.code,
-        expectedCode,
-        verified,
+      this.logProvider.info({
+        message: '[QA MODE] Verification result',
+        context: 'VerificationService.verifyCode',
+        params: {
+          type: dto.type,
+          destination: dto.destination,
+          code: dto.code,
+          expectedCode,
+          verified,
+        },
       });
 
       return {
@@ -78,7 +93,10 @@ export class VerificationService implements VerificationServiceInterface {
         message: verified ? 'Código verificado com sucesso' : 'Código inválido ou expirado',
       };
     } catch (error) {
-      this.logger.error(`Failed to verify code: ${error.message}`);
+      this.logProvider.error({
+        message: `Failed to verify code: ${error.message}`,
+        context: 'VerificationService.verifyCode',
+      });
       throw new BadRequestException('Falha ao verificar código');
     }
   }

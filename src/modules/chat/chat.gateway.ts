@@ -1,4 +1,4 @@
-import { Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -10,6 +10,8 @@ import {
 } from '@nestjs/websockets';
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
@@ -27,10 +29,10 @@ export class ChatGateway
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(ChatGateway.name);
   private subscriber: Redis;
 
   constructor(
+    @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @Inject(CHAT_SERVICE)
     private readonly chatService: ChatService,
     @Inject(BFF_CACHE_SERVICE)
@@ -45,11 +47,11 @@ export class ChatGateway
         const payload = JSON.parse(message) as { event: string; data: unknown };
         this.server.to(roomId).emit(payload.event, payload.data);
       } catch {
-        this.logger.warn(`Malformed Redis message on channel ${channel}`);
+        this.logProvider.warn({ message: `Malformed Redis message on channel ${channel}`, context: 'ChatGateway.onModuleInit' });
       }
     });
     this.subscriber.psubscribe('chat:*');
-    this.logger.log('ChatGateway subscribed to Redis chat:* channels');
+    this.logProvider.info({ message: 'ChatGateway subscribed to Redis chat:* channels', context: 'ChatGateway.onModuleInit' });
   }
 
   onModuleDestroy() {
@@ -64,11 +66,11 @@ export class ChatGateway
       return;
     }
     client.data['userId'] = userId;
-    this.logger.log(`Client connected: ${client.id} (user: ${userId})`);
+    this.logProvider.info({ message: `Client connected: ${client.id} (user: ${userId})`, context: 'ChatGateway.handleConnection' });
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.logProvider.info({ message: `Client disconnected: ${client.id}`, context: 'ChatGateway.handleDisconnect' });
   }
 
   @SubscribeMessage('join_room')
