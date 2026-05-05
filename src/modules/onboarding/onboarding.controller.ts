@@ -31,7 +31,7 @@ import { VerifyEmailRequestDto } from './dtos/verify-email-request.dto';
 import { VerifyPhoneRequestDto } from './dtos/verify-phone-request.dto';
 
 @ApiTags('Onboarding')
-@Controller('bff/onboarding')
+@Controller('/onboarding')
 export class OnboardingController {
   constructor(
     private readonly registrationService: RegistrationService,

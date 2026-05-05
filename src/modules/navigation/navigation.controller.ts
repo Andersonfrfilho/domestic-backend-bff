@@ -62,7 +62,7 @@ const NAV_RESPONSE_SCHEMA = {
 } as const;
 
 @ApiTags('Navigation (Admin)')
-@Controller('bff/navigation')
+@Controller('/navigation')
 export class NavigationController {
   constructor(
     @Inject(NAVIGATION_CONFIG_SERVICE)

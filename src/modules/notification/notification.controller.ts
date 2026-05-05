@@ -7,7 +7,7 @@ import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagg
 
 @ApiTags('Notifications')
 @ApiSecurity('kong-user-id')
-@Controller('bff/notifications')
+@Controller('/notifications')
 export class NotificationController {
   constructor(@Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService) {}
 

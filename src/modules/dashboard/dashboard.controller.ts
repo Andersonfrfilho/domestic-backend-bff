@@ -8,7 +8,7 @@ import { DASHBOARD_SERVICE } from './dashboard.token';
 
 @ApiTags('Dashboard')
 @ApiSecurity('kong-user-id')
-@Controller('bff/dashboard')
+@Controller('/dashboard')
 export class DashboardController {
   constructor(@Inject(DASHBOARD_SERVICE) private readonly service: DashboardService) {}
 

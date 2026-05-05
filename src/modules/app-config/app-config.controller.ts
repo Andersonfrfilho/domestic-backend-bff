@@ -7,7 +7,7 @@ import { AppConfigService } from './app-config.service';
 import { APP_CONFIG_SERVICE } from './app-config.token';
 
 @ApiTags('App Config')
-@Controller('bff/app-config')
+@Controller('/app-config')
 export class AppConfigController {
   constructor(@Inject(APP_CONFIG_SERVICE) private readonly service: AppConfigService) {}
 

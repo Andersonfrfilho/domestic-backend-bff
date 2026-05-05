@@ -16,7 +16,7 @@ import { ScreenComponent } from '@modules/shared/screen/schemas/screen-config.sc
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 @ApiTags('Screens')
-@Controller('bff/screens')
+@Controller('/screens')
 export class ScreensController {
   constructor(
     @Inject(SCREEN_CONFIG_SERVICE)

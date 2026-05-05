@@ -6,7 +6,7 @@ import { TermsService } from './terms.service';
 import { ForgotPasswordRequestDto } from './dtos/forgot-password-request.dto';
 
 @ApiTags('Auth')
-@Controller('bff/auth')
+@Controller('/auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
