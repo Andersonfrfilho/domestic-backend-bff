@@ -2,11 +2,11 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/commo
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { TermsService } from './terms.service';
 import { ForgotPasswordRequestDto } from './dtos/forgot-password-request.dto';
+import { TermsService } from './terms.service';
 
 @ApiTags('Auth')
-@Controller('/auth')
+@Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

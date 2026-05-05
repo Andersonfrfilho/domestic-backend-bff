@@ -17,7 +17,7 @@ import { CHAT_SERVICE } from './chat.token';
 
 @ApiTags('Chat')
 @ApiSecurity('kong-user-id')
-@Controller('/chat')
+@Controller('chat')
 export class ChatController {
   constructor(@Inject(CHAT_SERVICE) private readonly service: ChatService) {}
 

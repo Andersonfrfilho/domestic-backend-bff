@@ -8,7 +8,7 @@ import { SearchService } from './search.service';
 import { SEARCH_SERVICE } from './search.token';
 
 @ApiTags('Search')
-@Controller('/search')
+@Controller('search')
 export class SearchController {
   constructor(@Inject(SEARCH_SERVICE) private readonly service: SearchService) {}
 

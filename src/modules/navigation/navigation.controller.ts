@@ -62,7 +62,11 @@ const NAV_RESPONSE_SCHEMA = {
 } as const;
 
 @ApiTags('Navigation (Admin)')
+<<<<<<< HEAD
 @Controller('/navigation')
+=======
+@Controller('navigation')
+>>>>>>> 2e80961 (fix(bff): add global prefix 'bff' in main.ts and improve error log message)
 export class NavigationController {
   constructor(
     @Inject(NAVIGATION_CONFIG_SERVICE)

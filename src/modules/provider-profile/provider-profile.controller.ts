@@ -7,7 +7,7 @@ import { ProviderProfileService } from './provider-profile.service';
 import { PROVIDER_PROFILE_SERVICE } from './provider-profile.token';
 
 @ApiTags('Provider Profile')
-@Controller('/providers')
+@Controller('providers')
 export class ProviderProfileController {
   constructor(
     @Inject(PROVIDER_PROFILE_SERVICE)

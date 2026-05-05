@@ -10,28 +10,34 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
-import { FieldVerificationService } from './field-verification.service';
-import { RegistrationService } from './registration.service';
-import { VerificationService } from './verification.service';
-
 import { CepResponseDto } from './dtos/cep-response.dto';
 import { FieldVerificationResponseDto } from './dtos/field-verification-response.dto';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
-import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationResponseDto } from './dtos/verification-response.dto';
+import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
 import { VerifyDocumentRequestDto } from './dtos/verify-document-request.dto';
 import { VerifyEmailRequestDto } from './dtos/verify-email-request.dto';
 import { VerifyPhoneRequestDto } from './dtos/verify-phone-request.dto';
+import { FieldVerificationService } from './field-verification.service';
+import { RegistrationService } from './registration.service';
+import { VerificationService } from './verification.service';
 
 @ApiTags('Onboarding')
-@Controller('/onboarding')
+@Controller('onboarding')
 export class OnboardingController {
   constructor(
     private readonly registrationService: RegistrationService,
@@ -43,8 +49,15 @@ export class OnboardingController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Cadastro de usuário', description: 'Cria usuário no Keycloak e na API.' })
-  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso.', type: RegisterResponseDto })
+  @ApiOperation({
+    summary: 'Cadastro de usuário',
+    description: 'Cria usuário no Keycloak e na API.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Usuário criado com sucesso.',
+    type: RegisterResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
   async register(@Body() body: RegisterRequestDto): Promise<RegisterResponseDto> {
@@ -53,15 +66,23 @@ export class OnboardingController {
 
   @Post('verification/send')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Enviar código de verificação', description: 'Envia código por email ou SMS. QA Mode: email=0000, telefone=últimos 4 dígitos.' })
+  @ApiOperation({
+    summary: 'Enviar código de verificação',
+    description: 'Envia código por email ou SMS. QA Mode: email=0000, telefone=últimos 4 dígitos.',
+  })
   @ApiResponse({ status: 200, description: 'Código enviado.', type: VerificationResponseDto })
-  async sendVerification(@Body() body: VerificationSendRequestDto): Promise<VerificationResponseDto> {
+  async sendVerification(
+    @Body() body: VerificationSendRequestDto,
+  ): Promise<VerificationResponseDto> {
     return this.verificationService.sendCode(body);
   }
 
   @Post('verification/verify')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verificar código', description: 'Valida o código de verificação enviado.' })
+  @ApiOperation({
+    summary: 'Verificar código',
+    description: 'Valida o código de verificação enviado.',
+  })
   @ApiResponse({ status: 200, description: 'Código verificado.', type: VerificationResponseDto })
   @ApiResponse({ status: 400, description: 'Código inválido ou expirado.' })
   async verifyCode(@Body() body: VerificationVerifyRequestDto): Promise<VerificationResponseDto> {
@@ -71,13 +92,19 @@ export class OnboardingController {
   @Post('documents/upload')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload de documento', description: 'Envia documento de verificação (RG, CNH, comprovante).' })
+  @ApiOperation({
+    summary: 'Upload de documento',
+    description: 'Envia documento de verificação (RG, CNH, comprovante).',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         file: { type: 'string', format: 'binary' },
-        documentType: { type: 'string', description: 'Tipo do documento (CPF, CNH, COMPROVANTE_RESIDENCIA, etc)' },
+        documentType: {
+          type: 'string',
+          description: 'Tipo do documento (CPF, CNH, COMPROVANTE_RESIDENCIA, etc)',
+        },
       },
       required: ['file', 'documentType'],
     },
@@ -91,7 +118,10 @@ export class OnboardingController {
   }
 
   @Get('cep/:cep')
-  @ApiOperation({ summary: 'Consulta CEP', description: 'Busca endereço pelo CEP via ViaCEP + geocoding.' })
+  @ApiOperation({
+    summary: 'Consulta CEP',
+    description: 'Busca endereço pelo CEP via ViaCEP + geocoding.',
+  })
   @ApiParam({ name: 'cep', description: 'CEP com 8 dígitos', example: '01001000' })
   @ApiResponse({ status: 200, description: 'Endereço encontrado.', type: CepResponseDto })
   @ApiResponse({ status: 404, description: 'CEP não encontrado.' })
@@ -101,8 +131,15 @@ export class OnboardingController {
 
   @Post('verify/email')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verificar email', description: 'Valida se email está disponível para cadastro.' })
-  @ApiResponse({ status: 200, description: 'Email disponível.', type: FieldVerificationResponseDto })
+  @ApiOperation({
+    summary: 'Verificar email',
+    description: 'Valida se email está disponível para cadastro.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email disponível.',
+    type: FieldVerificationResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
   async verifyEmail(@Body() body: VerifyEmailRequestDto): Promise<FieldVerificationResponseDto> {
@@ -111,8 +148,15 @@ export class OnboardingController {
 
   @Post('verify/phone')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verificar telefone', description: 'Valida se telefone está disponível para cadastro.' })
-  @ApiResponse({ status: 200, description: 'Telefone disponível.', type: FieldVerificationResponseDto })
+  @ApiOperation({
+    summary: 'Verificar telefone',
+    description: 'Valida se telefone está disponível para cadastro.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Telefone disponível.',
+    type: FieldVerificationResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Telefone já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
   async verifyPhone(@Body() body: VerifyPhoneRequestDto): Promise<FieldVerificationResponseDto> {
@@ -121,11 +165,20 @@ export class OnboardingController {
 
   @Post('verify/document')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verificar documento', description: 'Valida se CPF ou CNPJ está disponível.' })
-  @ApiResponse({ status: 200, description: 'Documento disponível.', type: FieldVerificationResponseDto })
+  @ApiOperation({
+    summary: 'Verificar documento',
+    description: 'Valida se CPF ou CNPJ está disponível.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Documento disponível.',
+    type: FieldVerificationResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Documento já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
-  async verifyDocument(@Body() body: VerifyDocumentRequestDto): Promise<FieldVerificationResponseDto> {
+  async verifyDocument(
+    @Body() body: VerifyDocumentRequestDto,
+  ): Promise<FieldVerificationResponseDto> {
     return this.fieldVerificationService.verifyDocument(body.document);
   }
 }

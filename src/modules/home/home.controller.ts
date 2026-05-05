@@ -7,7 +7,7 @@ import { HomeService } from './home.service';
 import { HOME_SERVICE } from './home.token';
 
 @ApiTags('Home')
-@Controller('/home')
+@Controller('home')
 export class HomeController {
   constructor(@Inject(HOME_SERVICE) private readonly service: HomeService) {}
 

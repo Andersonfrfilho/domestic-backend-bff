@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
+import { ScreenComponent } from '@modules/shared/screen/schemas/screen-config.schema';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
 import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
-import { ScreenComponent } from '@modules/shared/screen/schemas/screen-config.schema';
-import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 @ApiTags('Screens')
-@Controller('/screens')
+@Controller('screens')
 export class ScreensController {
   constructor(
     @Inject(SCREEN_CONFIG_SERVICE)
