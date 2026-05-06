@@ -54,4 +54,32 @@ export class RegisterRequestDto {
   @IsOptional()
   @Matches(/^\d{11}$/, { message: 'CPF deve conter 11 dígitos' })
   cpf?: string;
+
+  @ApiProperty({
+    example: '12345678000195',
+    description: 'CNPJ (apenas números) — quando informado, cria empresa automaticamente',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d{14}$/, { message: 'CNPJ deve conter 14 dígitos' })
+  cnpj?: string;
+
+  @ApiProperty({
+    example: 'Empresa LTDA',
+    description: 'Razão Social (obrigatório quando CNPJ é informado)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  companyName?: string;
+
+  @ApiProperty({
+    example: 'Empresa',
+    description: 'Nome Fantasia',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  tradeName?: string;
 }

@@ -15,6 +15,7 @@ import * as tsConfig from '../tsconfig.json';
 import { AppConfigModule } from './modules/app-config/app-config.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { CompanyModule } from './modules/company/company.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ErrorModule } from './modules/error/error.module';
 import { HomeModule } from './modules/home/home.module';
@@ -69,6 +70,7 @@ tsConfigPathsRegister({
     NavigationModule,
     AuthModule,
     OnboardingModule,
+    CompanyModule,
   ],
 })
 export class AppModule implements NestModule {
