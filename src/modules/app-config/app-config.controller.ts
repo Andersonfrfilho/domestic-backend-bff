@@ -7,11 +7,7 @@ import { AppConfigService } from './app-config.service';
 import { APP_CONFIG_SERVICE } from './app-config.token';
 
 @ApiTags('App Config')
-<<<<<<< HEAD
-@Controller('/app-config')
-=======
 @Controller('app-config')
->>>>>>> 2e80961 (fix(bff): add global prefix 'bff' in main.ts and improve error log message)
 export class AppConfigController {
   constructor(@Inject(APP_CONFIG_SERVICE) private readonly service: AppConfigService) {}
 

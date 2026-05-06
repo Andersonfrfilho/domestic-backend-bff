@@ -29,11 +29,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade
-<<<<<<< HEAD
   app.setGlobalPrefix('bff', { exclude: ['health'] });
-=======
-  app.setGlobalPrefix('bff');
->>>>>>> 2e80961 (fix(bff): add global prefix 'bff' in main.ts and improve error log message)
 
   // Socket.io adapter para WebSocket (usa Redis Pub/Sub multi-instance)
   app.useWebSocketAdapter(new IoAdapter(app));
