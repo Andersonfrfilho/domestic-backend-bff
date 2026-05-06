@@ -40,9 +40,9 @@
     "seed:mongodb": "node scripts/seed-mongodb.mjs"
   },
   "dependencies": {
-    "@adatechnology/auth-keycloak": "^0.1.5",
+    "@adatechnology/auth-keycloak": "^0.1.7",
     "@adatechnology/cache": "^0.0.10",
-    "@adatechnology/http-client": "^0.0.11",
+    "@adatechnology/http-client": "^0.0.13",
     "@adatechnology/logger": "^0.0.9",
     "@faker-js/faker": "^10.1.0",
     "@fastify/helmet": "^13.0.2",
