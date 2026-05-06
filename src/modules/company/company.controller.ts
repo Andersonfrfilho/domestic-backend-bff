@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiAuthGuard } from '@adatechnology/auth-keycloak';
 import { CompanyService } from './company.service';
 
 @ApiTags('Companies')
@@ -10,18 +9,14 @@ export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
   @Get('me')
-  @UseGuards(ApiAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar minhas empresas' })
   @ApiResponse({ status: 200, description: 'Lista de empresas do usuário' })
   async listMyCompanies(@Req() req: any) {
-    const userId = req.user?.sub;
+    const userId = req.headers['x-user-id'];
     return this.companyService.listUserCompanies(userId);
   }
 
   @Get(':companyId')
-  @UseGuards(ApiAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Detalhes da empresa' })
   @ApiResponse({ status: 200, description: 'Detalhes da empresa' })
   async getCompanyDetails(@Param('companyId') companyId: string) {
@@ -29,8 +24,6 @@ export class CompanyController {
   }
 
   @Post(':companyId/addresses')
-  @UseGuards(ApiAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar endereço à empresa' })
   @ApiResponse({ status: 201, description: 'Endereço adicionado' })
   async addAddress(
@@ -41,8 +34,6 @@ export class CompanyController {
   }
 
   @Post(':companyId/members')
-  @UseGuards(ApiAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar membro à empresa' })
   @ApiResponse({ status: 201, description: 'Membro adicionado' })
   async addMember(
@@ -53,8 +44,6 @@ export class CompanyController {
   }
 
   @Post(':companyId/providers')
-  @UseGuards(ApiAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar provedor à empresa' })
   @ApiResponse({ status: 201, description: 'Provedor adicionado' })
   async addProvider(
