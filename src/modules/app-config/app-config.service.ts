@@ -23,6 +23,7 @@ const DEFAULT_FEATURES: FeaturesDto = {
   notificationsEnabled: true,
   reviewsEnabled: true,
   providerSearchEnabled: true,
+  documentPhotoVerification: false,
 };
 
 const DEFAULT_VERSION: AppVersionDto = {

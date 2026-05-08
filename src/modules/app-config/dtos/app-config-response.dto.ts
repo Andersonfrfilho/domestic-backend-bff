@@ -34,6 +34,7 @@ export interface FeaturesDto {
   notificationsEnabled: boolean;
   reviewsEnabled: boolean;
   providerSearchEnabled: boolean;
+  documentPhotoVerification: boolean;
 }
 
 export interface AppVersionDto {
