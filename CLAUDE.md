@@ -75,6 +75,9 @@ Seguir estas convenções é obrigatório para manter o padrão de grandes organ
 - **Não valida JWT** — autenticação é feita pelo Kong que injeta `X-User-Id`, `X-User-Roles`, `X-User-Type`
 - **Não escreve em PostgreSQL** nem publica em RabbitMQ — leitura/agregação apenas
 - **Não duplica lógica de negócio** do Backend API — apenas transforma e agrega
+- **Não gerencia usuários no Keycloak** — toda operação de conta (criar, verificar, atualizar) é responsabilidade da API
+- **Não gerencia códigos de verificação** — o BFF não deve gerar, armazenar ou validar códigos; isso é responsabilidade da API
+- **Não toma decisões de negócio** — se precisa de IF/ELSE com lógica de domínio, pertence à API, não ao BFF
 
 ### Regra de navegação mobile
 
