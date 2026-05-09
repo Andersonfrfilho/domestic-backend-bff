@@ -46,7 +46,7 @@ export class RegistrationService implements RegistrationServiceInterface {
   }
 
   private async createApiUser(dto: RegisterRequestDto): Promise<{ keycloakId: string; userId: string }> {
-    const apiUrl = `${this.env.apiBaseUrl}/onboarding/register`;
+    const apiUrl = `${this.env.apiBaseUrl}/v1/onboarding/register`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -57,9 +57,8 @@ export class RegistrationService implements RegistrationServiceInterface {
         lastName: dto.lastName,
         phone: dto.phone,
         password: dto.password,
-        ...(dto.cpf ? { cpf: dto.cpf } : {}),
+        ...(dto.cpf || dto.cnpj ? { document: dto.cpf || dto.cnpj } : {}),
         ...(dto.cnpj ? {
-          cnpj: dto.cnpj,
           companyName: dto.companyName,
           tradeName: dto.tradeName,
         } : {}),
