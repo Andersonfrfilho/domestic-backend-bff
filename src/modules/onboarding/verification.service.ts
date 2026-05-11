@@ -113,7 +113,7 @@ export class VerificationService implements VerificationServiceInterface {
   }
 
   private async sendEmailCode(email: string): Promise<void> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/verification/send`, {
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/onboarding/verification/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ destination: email, type: 'email' }),
@@ -125,10 +125,10 @@ export class VerificationService implements VerificationServiceInterface {
   }
 
   private async sendSmsCode(phone: string): Promise<void> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/verification/send`, {
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/onboarding/verification/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ destination: phone, type: 'phone' }),
+      body: JSON.stringify({ destination: phone, type: 'sms' }),
     });
 
     if (!response.ok) {
@@ -137,7 +137,7 @@ export class VerificationService implements VerificationServiceInterface {
   }
 
   private async verifyCodeWithApi(dto: VerificationVerifyRequestDto): Promise<boolean> {
-    const response = await fetch(`${this.env.apiBaseUrl}/auth/verification/verify`, {
+    const response = await fetch(`${this.env.apiBaseUrl}/v1/onboarding/verification/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

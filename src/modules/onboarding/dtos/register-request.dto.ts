@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class RegisterRequestDto {
   @ApiProperty({
@@ -82,4 +82,9 @@ export class RegisterRequestDto {
   @IsString()
   @IsOptional()
   tradeName?: string;
+
+  @ApiProperty({ example: true, description: 'Aceite dos termos de uso' })
+  @IsBoolean()
+  @IsNotEmpty()
+  termsAccepted: boolean;
 }

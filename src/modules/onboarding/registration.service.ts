@@ -57,6 +57,7 @@ export class RegistrationService implements RegistrationServiceInterface {
         lastName: dto.lastName,
         phone: dto.phone,
         password: dto.password,
+        termsAccepted: dto.termsAccepted,
         ...(dto.cpf || dto.cnpj ? { document: dto.cpf || dto.cnpj } : {}),
         ...(dto.cnpj ? {
           companyName: dto.companyName,
