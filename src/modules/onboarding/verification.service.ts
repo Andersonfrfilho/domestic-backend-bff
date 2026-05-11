@@ -19,20 +19,6 @@ export class VerificationService implements VerificationServiceInterface {
   ) {}
 
   async sendCode(dto: VerificationSendRequestDto): Promise<VerificationResponseDto> {
-    if (this.env.isDevelopment() || this.env.isTest()) {
-      const code = this.generateQaCode(dto);
-      this.logProvider.info({
-        message: `[QA MODE] Verification code generated: ${code}`,
-        context: 'VerificationService.sendCode',
-        meta: { type: dto.type, destination: dto.destination },
-      });
-
-      return {
-        success: true,
-        message: `Código de verificação gerado (QA Mode): ${code}`,
-      };
-    }
-
     try {
       if (dto.type === 'email') {
         await this.sendEmailCode(dto.destination);
@@ -59,33 +45,6 @@ export class VerificationService implements VerificationServiceInterface {
   }
 
   async verifyCode(dto: VerificationVerifyRequestDto): Promise<VerificationResponseDto> {
-    if (this.env.isDevelopment() || this.env.isTest()) {
-      const expectedCode = this.generateQaCode({
-        type: dto.type,
-        destination: dto.destination,
-      });
-
-      const verified = dto.code === expectedCode;
-
-      this.logProvider.info({
-        message: '[QA MODE] Verification result',
-        context: 'VerificationService.verifyCode',
-        meta: {
-          type: dto.type,
-          destination: dto.destination,
-          code: dto.code,
-          expectedCode,
-          verified,
-        },
-      });
-
-      return {
-        success: verified,
-        verified,
-        message: verified ? 'Código verificado com sucesso' : 'Código inválido',
-      };
-    }
-
     try {
       const verified = await this.verifyCodeWithApi(dto);
 
@@ -101,15 +60,6 @@ export class VerificationService implements VerificationServiceInterface {
       });
       throw AppErrorFactory.businessLogic({ message: 'Falha ao verificar código', code: 'VERIFICATION_VERIFY_FAILED' });
     }
-  }
-
-  private generateQaCode(dto: VerificationSendRequestDto): string {
-    if (dto.type === 'email') {
-      return '0000';
-    }
-
-    const lastFourDigits = dto.destination.slice(-4);
-    return lastFourDigits.padStart(4, '0');
   }
 
   private async sendEmailCode(email: string): Promise<void> {

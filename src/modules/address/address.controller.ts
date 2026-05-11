@@ -5,7 +5,7 @@ import { AddressService } from './address.service';
 import { AutocompleteResponseDto } from './dtos/autocomplete-response.dto';
 
 @ApiTags('Address')
-@Controller('bff/address')
+@Controller('address')
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}
 
