@@ -12,6 +12,7 @@ import { HealthModule } from '@modules/health/health.module';
 
 import * as tsConfig from '../tsconfig.json';
 
+import { AddressModule } from './modules/address/address.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -71,6 +72,7 @@ tsConfigPathsRegister({
     AuthModule,
     OnboardingModule,
     CompanyModule,
+    AddressModule,
   ],
 })
 export class AppModule implements NestModule {

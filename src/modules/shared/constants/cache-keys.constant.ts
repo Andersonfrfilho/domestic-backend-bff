@@ -19,4 +19,7 @@ export const CACHE_KEYS = {
   DASHBOARD_CONTRACTOR: (userId: string) => `bff:dashboard:contractor:${userId}`,
 
   DASHBOARD_PROVIDER: (userId: string) => `bff:dashboard:provider:${userId}`,
+
+  /** Autocomplete de endereço via Nominatim. TTL: 7 dias. */
+  ADDRESS_AUTOCOMPLETE: (query: string) => `bff:address:autocomplete:${query}`,
 } as const;
