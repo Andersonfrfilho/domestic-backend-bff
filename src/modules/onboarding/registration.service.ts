@@ -5,6 +5,7 @@ import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { GeocodingService } from '@modules/auth/geocoding.service';
 import { RegistrationServiceInterface } from './interfaces/registration-service.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
@@ -15,6 +16,7 @@ export class RegistrationService implements RegistrationServiceInterface {
     @Inject(LOGGER_PROVIDER)
     private readonly logProvider: LogProviderInterface,
     private readonly api: ApiClientService,
+    private readonly geocoding: GeocodingService,
   ) {}
 
   async register(dto: RegisterRequestDto): Promise<RegisterResponseDto> {
@@ -60,6 +62,24 @@ export class RegistrationService implements RegistrationServiceInterface {
     longitude?: string;
   }): Promise<{ addressId: string }> {
     try {
+      let lat = dto.latitude;
+      let lng = dto.longitude;
+
+      if (!lat || !lng) {
+        const geocode = await this.geocoding.geocode({
+          street: dto.street,
+          number: dto.number,
+          neighborhood: dto.neighborhood,
+          city: dto.city,
+          state: dto.state,
+          cep: dto.cep,
+        });
+        if (geocode) {
+          lat = String(geocode.lat);
+          lng = String(geocode.lng);
+        }
+      }
+
       const result = await this.api.post<{ id: string }>({
         path: '/v1/onboarding/address',
         body: {
@@ -71,8 +91,8 @@ export class RegistrationService implements RegistrationServiceInterface {
           city: dto.city,
           state: dto.state,
           zipCode: dto.cep,
-          latitude: dto.latitude ?? null,
-          longitude: dto.longitude ?? null,
+          latitude: lat ?? null,
+          longitude: lng ?? null,
         },
       });
 
@@ -98,7 +118,7 @@ export class RegistrationService implements RegistrationServiceInterface {
         phone: dto.phone,
         password: dto.password,
         termsAccepted: dto.termsAccepted,
-        ...(dto.cpf || dto.cnpj ? { document: dto.cpf || dto.cnpj } : {}),
+        ...(dto.cpf || dto.cnpj || dto.rg || dto.passport ? { document: dto.cpf || dto.cnpj || dto.rg || dto.passport } : {}),
         ...(dto.cnpj ? {
           companyName: dto.companyName,
           tradeName: dto.tradeName,

@@ -23,7 +23,7 @@ const DEFAULT_FEATURES: FeaturesDto = {
   notificationsEnabled: true,
   reviewsEnabled: true,
   providerSearchEnabled: true,
-  documentPhotoVerification: false,
+  documentPhotoVerification: process.env.FEATURE_DOCUMENT_PHOTO_VERIFICATION === 'true',
 };
 
 const DEFAULT_VERSION: AppVersionDto = {

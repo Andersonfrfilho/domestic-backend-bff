@@ -27,7 +27,7 @@ export class DocumentService implements DocumentServiceInterface {
       formData.append('file', blob, file.originalname);
       formData.append('documentType', documentType);
 
-      const url = `${this.getBaseUrl()}/documents`;
+      const url = `${this.getBaseUrl()}/v1/onboarding/documents`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {

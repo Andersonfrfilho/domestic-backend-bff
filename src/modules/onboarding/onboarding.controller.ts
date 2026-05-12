@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -19,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { AddressRequestDto } from './dtos/address-request.dto';
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
 import { CepResponseDto } from './dtos/cep-response.dto';
@@ -71,20 +73,7 @@ export class OnboardingController {
     description: 'Persiste o endereço do usuário durante o onboarding. Não requer autenticação — identifica o usuário pelo keycloakId.',
   })
   @ApiResponse({ status: 201, description: 'Endereço salvo.' })
-  async saveAddress(
-    @Body() body: {
-      keycloakId: string;
-      cep: string;
-      street: string;
-      number: string;
-      complement?: string;
-      neighborhood: string;
-      city: string;
-      state: string;
-      latitude?: string;
-      longitude?: string;
-    },
-  ): Promise<{ addressId: string }> {
+  async saveAddress(@Body() body: AddressRequestDto): Promise<{ addressId: string }> {
     return this.registrationService.saveAddress(body);
   }
 
@@ -137,8 +126,9 @@ export class OnboardingController {
   async uploadDocument(
     @UploadedFile() file: Express.Multer.File,
     @Body('documentType') documentType: string,
+    @Headers('x-user-id') keycloakId?: string,
   ): Promise<UploadDocumentResponseDto> {
-    return this.documentService.uploadDocument('', file, documentType);
+    return this.documentService.uploadDocument(keycloakId || '', file, documentType);
   }
 
   @Get('cep/:cep')

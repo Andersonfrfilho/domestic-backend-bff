@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterRequestDto {
   @ApiProperty({
@@ -52,6 +52,7 @@ export class RegisterRequestDto {
   })
   @IsString()
   @IsOptional()
+  @ValidateIf((o) => !!o.cpf)
   @Matches(/^\d{11}$/, { message: 'CPF deve conter 11 dígitos' })
   cpf?: string;
 
@@ -62,8 +63,31 @@ export class RegisterRequestDto {
   })
   @IsString()
   @IsOptional()
+  @ValidateIf((o) => !!o.cnpj)
   @Matches(/^\d{14}$/, { message: 'CNPJ deve conter 14 dígitos' })
   cnpj?: string;
+
+  @ApiProperty({
+    example: '123456789',
+    description: 'RG (6 a 9 dígitos)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => !!o.rg)
+  @Matches(/^\d{6,9}$/, { message: 'RG deve conter entre 6 e 9 dígitos' })
+  rg?: string;
+
+  @ApiProperty({
+    example: 'AB1234567',
+    description: 'Passaporte (formato do país de origem)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => !!o.passport)
+  @Matches(/^[A-Z0-9]{6,9}$/i, { message: 'Passaporte inválido' })
+  passport?: string;
 
   @ApiProperty({
     example: 'Empresa LTDA',
