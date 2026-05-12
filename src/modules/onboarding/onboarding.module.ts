@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 
 import { ApiClientModule } from '@modules/shared/api-client/api-client.module';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
-import { EnvironmentProvider } from '@config/providers/environment.provider';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
@@ -22,7 +21,6 @@ import { VerificationService } from './verification.service';
     DocumentService,
     CepService,
     GeocodingService,
-    EnvironmentProvider,
     ApiClientService,
     FieldVerificationService,
   ],
