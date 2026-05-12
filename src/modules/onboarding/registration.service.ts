@@ -103,6 +103,20 @@ export class RegistrationService implements RegistrationServiceInterface {
           companyName: dto.companyName,
           tradeName: dto.tradeName,
         } : {}),
+        // Endereço (opcional, salvo junto com o cadastro)
+        ...(dto.cep && dto.street && dto.number ? {
+          address: {
+            zipCode: dto.cep,
+            street: dto.street,
+            number: dto.number,
+            complement: dto.complement ?? null,
+            neighborhood: dto.neighborhood ?? null,
+            city: dto.city ?? null,
+            state: dto.state ?? null,
+            latitude: dto.lat ?? null,
+            longitude: dto.lng ?? null,
+          },
+        } : {}),
       },
     });
   }
