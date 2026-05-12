@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -62,6 +63,30 @@ export class OnboardingController {
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
   async register(@Body() body: RegisterRequestDto): Promise<RegisterResponseDto> {
     return this.registrationService.register(body);
+  }
+
+  @Post('address')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Salvar endereço pós-cadastro',
+    description: 'Persiste o endereço do usuário após o auto-login da verificação.',
+  })
+  @ApiResponse({ status: 201, description: 'Endereço salvo.' })
+  async saveAddress(
+    @Headers('authorization') authorization: string,
+    @Body() body: {
+      cep: string;
+      street: string;
+      number: string;
+      complement?: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      lat?: string;
+      lng?: string;
+    },
+  ): Promise<{ addressId: string }> {
+    return this.registrationService.saveAddress(authorization, body);
   }
 
   @Post('verification/send')

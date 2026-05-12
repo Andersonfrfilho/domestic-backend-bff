@@ -45,6 +45,52 @@ export class RegistrationService implements RegistrationServiceInterface {
     }
   }
 
+  async saveAddress(authorization: string, dto: {
+    cep: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    lat?: string;
+    lng?: string;
+  }): Promise<{ addressId: string }> {
+    const apiUrl = `${this.env.apiBaseUrl}/v1/users/me/addresses`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authorization,
+      },
+      body: JSON.stringify({
+        street: dto.street,
+        number: dto.number,
+        complement: dto.complement ?? null,
+        neighborhood: dto.neighborhood,
+        city: dto.city,
+        state: dto.state,
+        zipCode: dto.cep,
+        latitude: dto.lat ?? null,
+        longitude: dto.lng ?? null,
+        isPrimary: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      this.logProvider.error({
+        message: `Failed to save address: ${response.status} - ${errorText}`,
+        context: 'RegistrationService.saveAddress',
+      });
+      throw AppErrorFactory.internalServer({ message: 'Falha ao salvar endereço' });
+    }
+
+    const data = await response.json();
+    return { addressId: data.id };
+  }
+
   private async createApiUser(dto: RegisterRequestDto): Promise<{ keycloakId: string; userId: string }> {
     const apiUrl = `${this.env.apiBaseUrl}/v1/onboarding/register`;
 
