@@ -45,7 +45,8 @@ export class RegistrationService implements RegistrationServiceInterface {
     }
   }
 
-  async saveAddress(authorization: string, dto: {
+  async saveAddress(dto: {
+    keycloakId: string;
     cep: string;
     street: string;
     number: string;
@@ -53,18 +54,16 @@ export class RegistrationService implements RegistrationServiceInterface {
     neighborhood: string;
     city: string;
     state: string;
-    lat?: string;
-    lng?: string;
+    latitude?: string;
+    longitude?: string;
   }): Promise<{ addressId: string }> {
-    const apiUrl = `${this.env.apiBaseUrl}/v1/users/me/addresses`;
+    const apiUrl = `${this.env.apiBaseUrl}/v1/onboarding/address`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authorization,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        keycloakId: dto.keycloakId,
         street: dto.street,
         number: dto.number,
         complement: dto.complement ?? null,
@@ -72,9 +71,8 @@ export class RegistrationService implements RegistrationServiceInterface {
         city: dto.city,
         state: dto.state,
         zipCode: dto.cep,
-        latitude: dto.lat ?? null,
-        longitude: dto.lng ?? null,
-        isPrimary: true,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
       }),
     });
 

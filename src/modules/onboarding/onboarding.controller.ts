@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -69,12 +68,12 @@ export class OnboardingController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Salvar endereço pós-cadastro',
-    description: 'Persiste o endereço do usuário após o auto-login da verificação.',
+    description: 'Persiste o endereço do usuário durante o onboarding. Não requer autenticação — identifica o usuário pelo keycloakId.',
   })
   @ApiResponse({ status: 201, description: 'Endereço salvo.' })
   async saveAddress(
-    @Headers('authorization') authorization: string,
     @Body() body: {
+      keycloakId: string;
       cep: string;
       street: string;
       number: string;
@@ -82,11 +81,11 @@ export class OnboardingController {
       neighborhood: string;
       city: string;
       state: string;
-      lat?: string;
-      lng?: string;
+      latitude?: string;
+      longitude?: string;
     },
   ): Promise<{ addressId: string }> {
-    return this.registrationService.saveAddress(authorization, body);
+    return this.registrationService.saveAddress(body);
   }
 
   @Post('verification/send')
