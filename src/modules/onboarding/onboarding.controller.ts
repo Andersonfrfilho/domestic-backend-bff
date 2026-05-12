@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,10 +8,9 @@ import {
   HttpStatus,
   Param,
   Post,
-  UploadedFile,
-  UseInterceptors,
+  Req,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import type { FastifyRequest } from 'fastify';
 import {
   ApiBody,
   ApiConsumes,
@@ -103,7 +103,6 @@ export class OnboardingController {
   }
 
   @Post('documents/upload')
-  @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Upload de documento',
@@ -124,10 +123,43 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Documento enviado.', type: UploadDocumentResponseDto })
   async uploadDocument(
-    @UploadedFile() file: Express.Multer.File,
-    @Body('documentType') documentType: string,
+    @Req() req: FastifyRequest,
     @Headers('x-user-id') keycloakId?: string,
   ): Promise<UploadDocumentResponseDto> {
+    let fileBuffer: Buffer | undefined;
+    let filename = 'document';
+    let mimetype = 'application/octet-stream';
+    let documentType = '';
+
+    for await (const part of req.parts()) {
+      if (part.type === 'file') {
+        fileBuffer = await part.toBuffer();
+        filename = part.filename;
+        mimetype = part.mimetype;
+      } else {
+        if (part.fieldname === 'documentType') {
+          documentType = part.value as string;
+        }
+      }
+    }
+
+    if (!fileBuffer) {
+      throw new BadRequestException('Arquivo não enviado');
+    }
+
+    const file: Express.Multer.File = {
+      buffer: fileBuffer,
+      originalname: filename,
+      mimetype,
+      fieldname: 'file',
+      size: fileBuffer.length,
+      encoding: '7bit',
+      destination: '',
+      filename,
+      path: '',
+      stream: undefined as any,
+    } as Express.Multer.File;
+
     return this.documentService.uploadDocument(keycloakId || '', file, documentType);
   }
 

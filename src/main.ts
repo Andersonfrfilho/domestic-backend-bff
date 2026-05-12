@@ -1,5 +1,6 @@
 import './instrumentation';
 
+import multipart from '@fastify/multipart';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -27,6 +28,9 @@ tsConfigPathsRegister({
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+
+  const maxFileSizeMb = parseInt(process.env.UPLOAD_MAX_FILE_SIZE_MB ?? '10', 10);
+  await app.register(multipart, { limits: { fileSize: maxFileSizeMb * 1024 * 1024 } });
 
   // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade
   app.setGlobalPrefix('bff', { exclude: ['health'] });
