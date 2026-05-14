@@ -4,14 +4,17 @@ import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
+import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
+import { API_CLIENT_SERVICE, ApiClientService } from '@modules/shared/api-client/api-client.service';
 
 @Injectable()
 export class AuthService {
 
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
-    private readonly env: EnvironmentProvider,
+    @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProvider,
+    @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
   ) {}
 
   async forgotPassword(email: string): Promise<void> {
