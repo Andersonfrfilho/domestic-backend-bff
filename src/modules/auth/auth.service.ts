@@ -6,7 +6,15 @@ import type { LogProviderInterface } from '@modules/shared/interfaces/log.interf
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
 import { EnvironmentProvider } from '@config/providers/environment.provider';
-import { API_CLIENT_SERVICE, ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
+import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+
+export type AccountStatusResponse = {
+  blocked: boolean;
+  status: string;
+  reason: string | null;
+  message: string | null;
+};
 
 @Injectable()
 export class AuthService {
@@ -129,9 +137,9 @@ export class AuthService {
     }
   }
 
-  async getAccountStatus(keycloakId: string): Promise<{ blocked: boolean; status: string; reason: string | null; message: string | null }> {
+  async getAccountStatus(keycloakId: string): Promise<AccountStatusResponse> {
     try {
-      const response = await this.api.get({
+      const response = await this.api.get<AccountStatusResponse>({
         path: '/v1/users/me/account-status',
         headers: { 'X-User-Id': keycloakId },
       });
