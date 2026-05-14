@@ -125,4 +125,17 @@ export class AuthService {
       return { emailVerified: false, phoneVerified: false };
     }
   }
+
+  async getAccountStatus(keycloakId: string): Promise<{ blocked: boolean; status: string; reason: string | null; message: string | null }> {
+    try {
+      const response = await this.api.get({
+        path: '/v1/users/me/account-status',
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({ message: `Error getting account status: ${error.message}`, context: 'AuthService.getAccountStatus' });
+      return { blocked: false, status: 'UNKNOWN', reason: null, message: null };
+    }
+  }
 }

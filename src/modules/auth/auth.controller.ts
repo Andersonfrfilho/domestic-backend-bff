@@ -65,4 +65,13 @@ export class AuthController {
   async getVerificationStatus(@Headers('x-user-id') keycloakId: string) {
     return this.authService.getVerificationStatus(keycloakId);
   }
+
+  @Get('account-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obter status da conta do usuário' })
+  @ApiHeader({ name: 'x-user-id', required: true, description: 'Keycloak ID do usuário' })
+  @ApiResponse({ status: 200, description: 'Status da conta do usuário.' })
+  async getAccountStatus(@Headers('x-user-id') keycloakId: string) {
+    return this.authService.getAccountStatus(keycloakId);
+  }
 }
