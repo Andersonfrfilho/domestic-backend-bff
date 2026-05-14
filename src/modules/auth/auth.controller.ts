@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
 import { ForgotPasswordRequestDto } from './dtos/forgot-password-request.dto';
@@ -55,5 +55,14 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Termos aceitos com sucesso.' })
   async acceptTerms(@Body() body: { userId: string; termsVersionId?: string }) {
     return this.termsService.acceptTerms(body.userId, body.termsVersionId);
+  }
+
+  @Get('verification-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obter status de verificação do usuário' })
+  @ApiHeader({ name: 'x-user-id', required: true, description: 'Keycloak ID do usuário' })
+  @ApiResponse({ status: 200, description: 'Status de verificação do usuário.' })
+  async getVerificationStatus(@Headers('x-user-id') keycloakId: string) {
+    return this.authService.getVerificationStatus(keycloakId);
   }
 }

@@ -91,4 +91,38 @@ export class AuthService {
       throw AppErrorFactory.internalServer({ message: 'Failed to trigger reset password email' });
     }
   }
+
+  async getVerificationStatus(keycloakId: string): Promise<{ emailVerified: boolean; phoneVerified: boolean }> {
+    try {
+      const adminToken = await this.getAdminToken();
+      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        this.logProvider.warn({ message: `Failed to get user from Keycloak: ${response.status}`, context: 'AuthService.getVerificationStatus' });
+        return { emailVerified: false, phoneVerified: false };
+      }
+
+      const user = await safeJsonParse<{
+        emailVerified: boolean;
+        attributes?: Record<string, string[]>;
+      }>(response);
+
+      const phoneVerified = user?.attributes?.phoneVerified?.[0] === 'true';
+
+      return {
+        emailVerified: user?.emailVerified ?? false,
+        phoneVerified,
+      };
+    } catch (error) {
+      this.logProvider.error({ message: `Error getting verification status: ${error.message}`, context: 'AuthService.getVerificationStatus' });
+      return { emailVerified: false, phoneVerified: false };
+    }
+  }
 }
