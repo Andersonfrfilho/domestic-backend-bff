@@ -5,7 +5,9 @@ import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
+import type { ApiClientService } from '@modules/shared/api-client/api-client.service';
 
 @Injectable()
 export class AuthService {
@@ -13,13 +15,14 @@ export class AuthService {
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
+    @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
   ) {}
 
   async forgotPassword(email: string): Promise<void> {
     try {
       const adminToken = await this.getAdminToken();
       const userId = await this.getUserIdByEmail(adminToken, email);
-      
+
       if (!userId) {
         throw AppErrorFactory.notFound({ message: 'Usuário não encontrado', code: 'USER_NOT_FOUND' });
       }
@@ -30,6 +33,26 @@ export class AuthService {
       this.logProvider.error({ message: `Failed to process forgot password for ${email}: ${error.message}`, context: 'AuthService.forgotPassword' });
       if (error instanceof AppError) throw error;
       throw AppErrorFactory.internalServer({ message: 'Falha ao processar recuperação de senha' });
+    }
+  }
+
+  async getVerificationStatus(keycloakId: string) {
+    try {
+      this.logProvider.info({ message: `Fetching verification status for user: ${keycloakId}`, context: 'AuthService.getVerificationStatus' });
+      return await this.api.get({ path: `/auth/verify/${keycloakId}` });
+    } catch (error) {
+      this.logProvider.error({ message: `Failed to fetch verification status: ${error.message}`, context: 'AuthService.getVerificationStatus' });
+      throw AppErrorFactory.internalServer({ message: 'Falha ao obter status de verificação' });
+    }
+  }
+
+  async getAccountStatus(keycloakId: string) {
+    try {
+      this.logProvider.info({ message: `Fetching account status for user: ${keycloakId}`, context: 'AuthService.getAccountStatus' });
+      return await this.api.get({ path: `/auth/account-status/${keycloakId}` });
+    } catch (error) {
+      this.logProvider.error({ message: `Failed to fetch account status: ${error.message}`, context: 'AuthService.getAccountStatus' });
+      throw AppErrorFactory.internalServer({ message: 'Falha ao obter status da conta' });
     }
   }
 
