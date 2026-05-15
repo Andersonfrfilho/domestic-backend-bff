@@ -62,7 +62,6 @@ export class AuthService {
     }
   }
 
-
   private async getAdminToken(): Promise<string> {
     const url = `${this.env.keycloakBaseUrl}/realms/master/protocol/openid-connect/token`;
     const params = new URLSearchParams();
