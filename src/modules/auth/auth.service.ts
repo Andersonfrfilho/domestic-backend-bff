@@ -20,6 +20,13 @@ export type UserDocumentResponse = {
   fileUrl?: string;
 };
 
+export type AccountStatusResponse = {
+  blocked: boolean;
+  status: string;
+  reason: string | null;
+  message: string | null;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -55,37 +62,6 @@ export class AuthService {
     }
   }
 
-  async getVerificationStatus(keycloakId: string) {
-    try {
-      this.logProvider.info({
-        message: `Fetching verification status for user: ${keycloakId}`,
-        context: 'AuthService.getVerificationStatus',
-      });
-      return await this.api.get({ path: `/auth/verify/${keycloakId}` });
-    } catch (error) {
-      this.logProvider.error({
-        message: `Failed to fetch verification status: ${error.message}`,
-        context: 'AuthService.getVerificationStatus',
-      });
-      throw AppErrorFactory.internalServer({ message: 'Falha ao obter status de verificação' });
-    }
-  }
-
-  async getAccountStatus(keycloakId: string) {
-    try {
-      this.logProvider.info({
-        message: `Fetching account status for user: ${keycloakId}`,
-        context: 'AuthService.getAccountStatus',
-      });
-      return await this.api.get({ path: `/auth/account-status/${keycloakId}` });
-    } catch (error) {
-      this.logProvider.error({
-        message: `Failed to fetch account status: ${error.message}`,
-        context: 'AuthService.getAccountStatus',
-      });
-      throw AppErrorFactory.internalServer({ message: 'Falha ao obter status da conta' });
-    }
-  }
 
   private async getAdminToken(): Promise<string> {
     const url = `${this.env.keycloakBaseUrl}/realms/master/protocol/openid-connect/token`;
