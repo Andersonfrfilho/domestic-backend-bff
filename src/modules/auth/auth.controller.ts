@@ -74,4 +74,13 @@ export class AuthController {
   async getAccountStatus(@Headers('x-user-id') keycloakId: string) {
     return this.authService.getAccountStatus(keycloakId);
   }
+
+  @Get('documents')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar documentos do usuário' })
+  @ApiHeader({ name: 'x-user-id', required: true, description: 'Keycloak ID do usuário' })
+  @ApiResponse({ status: 200, description: 'Lista de documentos do usuário.' })
+  async getDocuments(@Headers('x-user-id') keycloakId: string) {
+    return this.authService.getDocuments(keycloakId);
+  }
 }

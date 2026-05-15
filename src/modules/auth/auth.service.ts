@@ -1,17 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
+import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
 import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
+import type { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
-import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
-import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
-import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
-import type { ApiClientService } from '@modules/shared/api-client/api-client.service';
+
+export type UserDocumentResponse = {
+  id: string;
+  documentType: string;
+  status: string;
+  uploadedAt: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  fileUrl?: string;
+};
 
 @Injectable()
 export class AuthService {
-
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
@@ -24,13 +34,22 @@ export class AuthService {
       const userId = await this.getUserIdByEmail(adminToken, email);
 
       if (!userId) {
-        throw AppErrorFactory.notFound({ message: 'Usuário não encontrado', code: 'USER_NOT_FOUND' });
+        throw AppErrorFactory.notFound({
+          message: 'Usuário não encontrado',
+          code: 'USER_NOT_FOUND',
+        });
       }
 
       await this.triggerResetPasswordEmail(adminToken, userId);
-      this.logProvider.info({ message: `Password reset triggered for user: ${email}`, context: 'AuthService.forgotPassword' });
+      this.logProvider.info({
+        message: `Password reset triggered for user: ${email}`,
+        context: 'AuthService.forgotPassword',
+      });
     } catch (error) {
-      this.logProvider.error({ message: `Failed to process forgot password for ${email}: ${error.message}`, context: 'AuthService.forgotPassword' });
+      this.logProvider.error({
+        message: `Failed to process forgot password for ${email}: ${error.message}`,
+        context: 'AuthService.forgotPassword',
+      });
       if (error instanceof AppError) throw error;
       throw AppErrorFactory.internalServer({ message: 'Falha ao processar recuperação de senha' });
     }
@@ -38,20 +57,32 @@ export class AuthService {
 
   async getVerificationStatus(keycloakId: string) {
     try {
-      this.logProvider.info({ message: `Fetching verification status for user: ${keycloakId}`, context: 'AuthService.getVerificationStatus' });
+      this.logProvider.info({
+        message: `Fetching verification status for user: ${keycloakId}`,
+        context: 'AuthService.getVerificationStatus',
+      });
       return await this.api.get({ path: `/auth/verify/${keycloakId}` });
     } catch (error) {
-      this.logProvider.error({ message: `Failed to fetch verification status: ${error.message}`, context: 'AuthService.getVerificationStatus' });
+      this.logProvider.error({
+        message: `Failed to fetch verification status: ${error.message}`,
+        context: 'AuthService.getVerificationStatus',
+      });
       throw AppErrorFactory.internalServer({ message: 'Falha ao obter status de verificação' });
     }
   }
 
   async getAccountStatus(keycloakId: string) {
     try {
-      this.logProvider.info({ message: `Fetching account status for user: ${keycloakId}`, context: 'AuthService.getAccountStatus' });
+      this.logProvider.info({
+        message: `Fetching account status for user: ${keycloakId}`,
+        context: 'AuthService.getAccountStatus',
+      });
       return await this.api.get({ path: `/auth/account-status/${keycloakId}` });
     } catch (error) {
-      this.logProvider.error({ message: `Failed to fetch account status: ${error.message}`, context: 'AuthService.getAccountStatus' });
+      this.logProvider.error({
+        message: `Failed to fetch account status: ${error.message}`,
+        context: 'AuthService.getAccountStatus',
+      });
       throw AppErrorFactory.internalServer({ message: 'Falha ao obter status da conta' });
     }
   }
@@ -76,17 +107,19 @@ export class AuthService {
 
     const data = await safeJsonParse<{ access_token: string }>(response);
     if (!data?.access_token) {
-      throw AppErrorFactory.internalServer({ message: 'Keycloak admin token response missing access_token' });
+      throw AppErrorFactory.internalServer({
+        message: 'Keycloak admin token response missing access_token',
+      });
     }
     return data.access_token;
   }
 
   private async getUserIdByEmail(token: string, email: string): Promise<string | null> {
     const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users?email=${email}&exact=true`;
-    
+
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -101,11 +134,11 @@ export class AuthService {
 
   private async triggerResetPasswordEmail(token: string, userId: string): Promise<void> {
     const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${userId}/execute-actions-email`;
-    
+
     const response = await fetch(url, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(['UPDATE_PASSWORD']),
@@ -113,6 +146,80 @@ export class AuthService {
 
     if (!response.ok) {
       throw AppErrorFactory.internalServer({ message: 'Failed to trigger reset password email' });
+    }
+  }
+
+  async getVerificationStatus(
+    keycloakId: string,
+  ): Promise<{ emailVerified: boolean; phoneVerified: boolean }> {
+    try {
+      const adminToken = await this.getAdminToken();
+      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        this.logProvider.warn({
+          message: `Failed to get user from Keycloak: ${response.status}`,
+          context: 'AuthService.getVerificationStatus',
+        });
+        return { emailVerified: false, phoneVerified: false };
+      }
+
+      const user = await safeJsonParse<{
+        emailVerified: boolean;
+        attributes?: Record<string, string[]>;
+      }>(response);
+
+      const phoneVerified = user?.attributes?.phoneVerified?.[0] === 'true';
+
+      return {
+        emailVerified: user?.emailVerified ?? false,
+        phoneVerified,
+      };
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting verification status: ${error.message}`,
+        context: 'AuthService.getVerificationStatus',
+      });
+      return { emailVerified: false, phoneVerified: false };
+    }
+  }
+
+  async getAccountStatus(keycloakId: string): Promise<AccountStatusResponse> {
+    try {
+      const response = await this.api.get<AccountStatusResponse>({
+        path: '/v1/users/me/account-status',
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting account status: ${error.message}`,
+        context: 'AuthService.getAccountStatus',
+      });
+      return { blocked: false, status: 'UNKNOWN', reason: null, message: null };
+    }
+  }
+
+  async getDocuments(keycloakId: string): Promise<UserDocumentResponse[]> {
+    try {
+      const response = await this.api.get<{ documents: UserDocumentResponse[] }>({
+        path: '/v1/users/me/documents',
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response.documents || [];
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting documents: ${error.message}`,
+        context: 'AuthService.getDocuments',
+      });
+      return [];
     }
   }
 }
