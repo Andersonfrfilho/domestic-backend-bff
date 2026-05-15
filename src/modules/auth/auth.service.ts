@@ -5,24 +5,14 @@ import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
-import { EnvironmentProvider } from '@config/providers/environment.provider';
-import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
-import { ApiClientService } from '@modules/shared/api-client/api-client.service';
-
-export type AccountStatusResponse = {
-  blocked: boolean;
-  status: string;
-  reason: string | null;
-  message: string | null;
-};
+import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
 
 @Injectable()
 export class AuthService {
 
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
-    @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProvider,
-    @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
+    @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
   ) {}
 
   async forgotPassword(email: string): Promise<void> {
@@ -100,53 +90,6 @@ export class AuthService {
 
     if (!response.ok) {
       throw AppErrorFactory.internalServer({ message: 'Failed to trigger reset password email' });
-    }
-  }
-
-  async getVerificationStatus(keycloakId: string): Promise<{ emailVerified: boolean; phoneVerified: boolean }> {
-    try {
-      const adminToken = await this.getAdminToken();
-      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        this.logProvider.warn({ message: `Failed to get user from Keycloak: ${response.status}`, context: 'AuthService.getVerificationStatus' });
-        return { emailVerified: false, phoneVerified: false };
-      }
-
-      const user = await safeJsonParse<{
-        emailVerified: boolean;
-        attributes?: Record<string, string[]>;
-      }>(response);
-
-      const phoneVerified = user?.attributes?.phoneVerified?.[0] === 'true';
-
-      return {
-        emailVerified: user?.emailVerified ?? false,
-        phoneVerified,
-      };
-    } catch (error) {
-      this.logProvider.error({ message: `Error getting verification status: ${error.message}`, context: 'AuthService.getVerificationStatus' });
-      return { emailVerified: false, phoneVerified: false };
-    }
-  }
-
-  async getAccountStatus(keycloakId: string): Promise<AccountStatusResponse> {
-    try {
-      const response = await this.api.get<AccountStatusResponse>({
-        path: '/v1/users/me/account-status',
-        headers: { 'X-User-Id': keycloakId },
-      });
-      return response;
-    } catch (error) {
-      this.logProvider.error({ message: `Error getting account status: ${error.message}`, context: 'AuthService.getAccountStatus' });
-      return { blocked: false, status: 'UNKNOWN', reason: null, message: null };
     }
   }
 }
