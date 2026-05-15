@@ -3,7 +3,8 @@ import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
-import { EnvironmentProvider } from '@config/providers/environment.provider';
+import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
+import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
 
 export interface TermsVersionDto {
   id: string;
@@ -25,7 +26,7 @@ export class TermsService {
 
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
-    private readonly env: EnvironmentProvider,
+    @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
   ) {}
 
   async getCurrentVersion(): Promise<TermsVersionDto | null> {
