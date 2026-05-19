@@ -23,10 +23,10 @@ export class AddressSuggestionDto {
   postcode: string;
 
   @ApiProperty({ example: -23.5558 })
-  lat: number;
+  latitude: number;
 
   @ApiProperty({ example: -46.6558 })
-  lng: number;
+  longitude: number;
 }
 
 export class AutocompleteResponseDto {

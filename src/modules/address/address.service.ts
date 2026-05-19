@@ -96,8 +96,8 @@ export class AddressService {
       city,
       state,
       postcode,
-      lat: parseFloat(item.lat),
-      lng: parseFloat(item.lon),
+      latitude: parseFloat(item.lat),
+      longitude: parseFloat(item.lon),
     };
   }
 
@@ -111,8 +111,8 @@ export class AddressService {
         city: 'São Paulo',
         state: 'SP',
         postcode: '01304-001',
-        lat: -23.5558,
-        lng: -46.6558,
+        latitude: -23.5558,
+        longitude: -46.6558,
       },
       {
         fullAddress: 'Avenida Paulista, 1000, Bela Vista, São Paulo - SP, 01310-100',
@@ -122,8 +122,8 @@ export class AddressService {
         city: 'São Paulo',
         state: 'SP',
         postcode: '01310-100',
-        lat: -23.5631,
-        lng: -46.6543,
+        latitude: -23.5631,
+        longitude: -46.6543,
       },
       {
         fullAddress: 'Rua Oscar Freire, 900, Cerqueira César, São Paulo - SP, 01426-001',
@@ -133,8 +133,8 @@ export class AddressService {
         city: 'São Paulo',
         state: 'SP',
         postcode: '01426-001',
-        lat: -23.5616,
-        lng: -46.6714,
+        latitude: -23.5616,
+        longitude: -46.6714,
       },
       {
         fullAddress: 'Rua das Flores, 250, Centro, Curitiba - PR, 80010-010',
@@ -144,8 +144,8 @@ export class AddressService {
         city: 'Curitiba',
         state: 'PR',
         postcode: '80010-010',
-        lat: -25.4295,
-        lng: -49.2718,
+        latitude: -25.4295,
+        longitude: -49.2718,
       },
       {
         fullAddress: 'Avenida Beira Mar, 100, Centro, Florianópolis - SC, 88010-000',
@@ -155,8 +155,8 @@ export class AddressService {
         city: 'Florianópolis',
         state: 'SC',
         postcode: '88010-000',
-        lat: -27.5969,
-        lng: -48.5495,
+        latitude: -27.5969,
+        longitude: -48.5495,
       },
     ];
 
