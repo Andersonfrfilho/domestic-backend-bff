@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Matches, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterRequestDto {
   @ApiProperty({
@@ -106,6 +106,17 @@ export class RegisterRequestDto {
   @IsString()
   @IsOptional()
   tradeName?: string;
+
+  @ApiProperty({
+    example: 'contractor',
+    description: 'Tipo de conta: contractor (quem contrata) ou provider (quem presta serviço)',
+    enum: ['contractor', 'provider'],
+    default: 'contractor',
+  })
+  @IsString()
+  @IsIn(['contractor', 'provider'])
+  @IsOptional()
+  userType?: 'contractor' | 'provider';
 
   @ApiProperty({ example: true, description: 'Aceite dos termos de uso' })
   @IsBoolean()

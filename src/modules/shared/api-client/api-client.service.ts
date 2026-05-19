@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { getRequestId } from '@modules/shared/request-context/request-context';
 import type {
   ApiClientGetParams,
   ApiClientPostParams,
@@ -20,6 +21,13 @@ export class ApiClientService {
   ) {
     this.baseUrl = process.env.API_BASE_URL ?? 'http://localhost:3000';
     this.timeoutMs = Number(process.env.API_TIMEOUT_MS ?? 5000);
+  }
+
+  private buildHeaders(extra?: Record<string, string>): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
+    const requestId = getRequestId();
+    if (requestId) headers['X-Request-Id'] = requestId;
+    return headers;
   }
 
   private async parseResponse<T>(response: Response): Promise<T> {
@@ -45,7 +53,7 @@ export class ApiClientService {
 
     try {
       const response = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: this.buildHeaders(headers),
         signal: controller.signal,
       });
 
@@ -71,7 +79,7 @@ export class ApiClientService {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: this.buildHeaders(headers),
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -98,7 +106,7 @@ export class ApiClientService {
     try {
       const response = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...headers },
+        headers: this.buildHeaders(headers),
         body: JSON.stringify(body),
         signal: controller.signal,
       });
