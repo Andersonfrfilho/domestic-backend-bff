@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { ApiClientModule } from '@modules/shared/api-client/api-client.module';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { AuthModule } from '@modules/auth/auth.module';
 
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
@@ -13,7 +14,7 @@ import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
 @Module({
-  imports: [ConfigModule, ApiClientModule],
+  imports: [ConfigModule, ApiClientModule, AuthModule],
   controllers: [OnboardingController],
   providers: [
     RegistrationService,

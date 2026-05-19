@@ -98,8 +98,11 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Código verificado.', type: VerificationResponseDto })
   @ApiResponse({ status: 400, description: 'Código inválido ou expirado.' })
-  async verifyCode(@Body() body: VerificationVerifyRequestDto): Promise<VerificationResponseDto> {
-    return this.verificationService.verifyCode(body);
+  async verifyCode(
+    @Body() body: VerificationVerifyRequestDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<VerificationResponseDto> {
+    return this.verificationService.verifyCode(body, authorization);
   }
 
   @Post('documents/upload')

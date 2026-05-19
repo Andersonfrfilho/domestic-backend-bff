@@ -5,6 +5,7 @@ import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { AuthService } from '@modules/auth/auth.service';
 import { VerificationServiceInterface } from './interfaces/verification-service.interface';
 import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
@@ -16,6 +17,7 @@ export class VerificationService implements VerificationServiceInterface {
     @Inject(LOGGER_PROVIDER)
     private readonly logProvider: LogProviderInterface,
     private readonly api: ApiClientService,
+    private readonly authService: AuthService,
   ) {}
 
   async sendCode(dto: VerificationSendRequestDto): Promise<VerificationResponseDto> {
@@ -46,9 +48,22 @@ export class VerificationService implements VerificationServiceInterface {
     }
   }
 
-  async verifyCode(dto: VerificationVerifyRequestDto): Promise<VerificationResponseDto> {
+  async verifyCode(dto: VerificationVerifyRequestDto, authorization?: string): Promise<VerificationResponseDto> {
     try {
       const verified = await this.verifyCodeWithApi(dto);
+
+      if (verified) {
+        const keycloakId = this.extractKeycloakIdFromToken(authorization) ?? dto.keycloakId;
+        if (keycloakId) {
+          const attributeType = dto.type === 'sms' ? 'phone' : 'email';
+          await this.authService.updateVerificationAttribute(keycloakId, attributeType);
+        } else {
+          this.logProvider.warn({
+            message: `Verification succeeded but keycloakId not available — Keycloak attribute not updated. type=${dto.type}`,
+            context: `${this.constructor.name}.verifyCode`,
+          });
+        }
+      }
 
       return {
         success: verified,
@@ -63,6 +78,18 @@ export class VerificationService implements VerificationServiceInterface {
 
       if (error instanceof AppError) throw error;
       throw AppErrorFactory.businessLogic({ message: 'Falha ao verificar código', code: 'VERIFICATION_VERIFY_FAILED' });
+    }
+  }
+
+  private extractKeycloakIdFromToken(authorization?: string): string | null {
+    if (!authorization) return null;
+    try {
+      const token = authorization.split(' ')[1];
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+      return (payload?.sub as string) ?? null;
+    } catch {
+      return null;
     }
   }
 

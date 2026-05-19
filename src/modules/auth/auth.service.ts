@@ -166,6 +166,60 @@ export class AuthService {
     }
   }
 
+  async updateVerificationAttribute(keycloakId: string, type: 'email' | 'phone'): Promise<void> {
+    try {
+      const adminToken = await this.getAdminToken();
+      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
+
+      const getResponse = await fetch(url, {
+        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      });
+
+      if (!getResponse.ok) {
+        this.logProvider.warn({
+          message: `Failed to get user from Keycloak for attribute update: ${getResponse.status}`,
+          context: 'AuthService.updateVerificationAttribute',
+        });
+        return;
+      }
+
+      const currentUser = await safeJsonParse<Record<string, any>>(getResponse);
+      if (!currentUser) return;
+
+      const updatedUser =
+        type === 'email'
+          ? { ...currentUser, emailVerified: true }
+          : {
+              ...currentUser,
+              attributes: { ...(currentUser.attributes ?? {}), phoneVerified: ['true'] },
+            };
+
+      const putResponse = await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser),
+      });
+
+      if (!putResponse.ok) {
+        this.logProvider.warn({
+          message: `Failed to update Keycloak ${type} attribute: ${putResponse.status}`,
+          context: 'AuthService.updateVerificationAttribute',
+        });
+        return;
+      }
+
+      this.logProvider.info({
+        message: `Keycloak ${type} verification attribute updated for user: ${keycloakId}`,
+        context: 'AuthService.updateVerificationAttribute',
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error updating Keycloak ${type} attribute: ${error.message}`,
+        context: 'AuthService.updateVerificationAttribute',
+      });
+    }
+  }
+
   async getAccountStatus(keycloakId: string): Promise<AccountStatusResponse> {
     try {
       const response = await this.api.get<AccountStatusResponse>({

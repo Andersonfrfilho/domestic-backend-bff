@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class VerificationVerifyRequestDto {
   @ApiProperty({
@@ -27,4 +27,12 @@ export class VerificationVerifyRequestDto {
   @IsString()
   @IsNotEmpty()
   code: string;
+
+  @ApiPropertyOptional({
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    description: 'ID do usuário no Keycloak — obrigatório apenas em fluxos sem autenticação (pós-cadastro)',
+  })
+  @IsOptional()
+  @IsString()
+  keycloakId?: string;
 }
