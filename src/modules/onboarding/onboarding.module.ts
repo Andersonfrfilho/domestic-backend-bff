@@ -10,6 +10,7 @@ import { DocumentService } from './document.service';
 import { FieldVerificationService } from './field-verification.service';
 import { GeocodingService } from '@modules/auth/geocoding.service';
 import { OnboardingController } from './onboarding.controller';
+import { OnboardingStatusService } from './onboarding-status.service';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
@@ -24,6 +25,7 @@ import { VerificationService } from './verification.service';
     GeocodingService,
     ApiClientService,
     FieldVerificationService,
+    OnboardingStatusService,
   ],
   exports: [RegistrationService, VerificationService, DocumentService, CepService],
 })

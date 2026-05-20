@@ -9,6 +9,7 @@ import {
   Param,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import {
@@ -25,6 +26,7 @@ import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
 import { CepResponseDto } from './dtos/cep-response.dto';
 import { FieldVerificationResponseDto } from './dtos/field-verification-response.dto';
+import { OnboardingStatusResponseDto } from './dtos/onboarding-status-response.dto';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
@@ -35,6 +37,7 @@ import { VerifyDocumentRequestDto } from './dtos/verify-document-request.dto';
 import { VerifyEmailRequestDto } from './dtos/verify-email-request.dto';
 import { VerifyPhoneRequestDto } from './dtos/verify-phone-request.dto';
 import { FieldVerificationService } from './field-verification.service';
+import { OnboardingStatusService } from './onboarding-status.service';
 import { RegistrationService } from './registration.service';
 import { VerificationService } from './verification.service';
 
@@ -47,6 +50,7 @@ export class OnboardingController {
     private readonly documentService: DocumentService,
     private readonly cepService: CepService,
     private readonly fieldVerificationService: FieldVerificationService,
+    private readonly onboardingStatusService: OnboardingStatusService,
   ) {}
 
   @Post('register')
@@ -229,5 +233,24 @@ export class OnboardingController {
     @Body() body: VerifyDocumentRequestDto,
   ): Promise<FieldVerificationResponseDto> {
     return this.fieldVerificationService.verifyDocument(body.document);
+  }
+
+  @Get('status')
+  @ApiOperation({
+    summary: 'Status do onboarding',
+    description:
+      'Retorna a etapa pendente do onboarding do usuário autenticado. Requer JWT via Kong.',
+  })
+  @ApiResponse({ status: 200, description: 'Status calculado.', type: OnboardingStatusResponseDto })
+  @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  async getOnboardingStatus(
+    @Headers('x-user-id') keycloakId: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<OnboardingStatusResponseDto> {
+    if (!keycloakId) {
+      throw new UnauthorizedException('x-user-id header ausente');
+    }
+    const accessToken = authorization?.replace(/^Bearer\s+/i, '') ?? '';
+    return this.onboardingStatusService.getStatus(keycloakId, accessToken);
   }
 }
