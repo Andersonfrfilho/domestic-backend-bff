@@ -11,6 +11,7 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
 @Module({
   imports: [
     PrometheusModule.register({
+      path: '/metrics',
       defaultMetrics: { enabled: true },
     }),
   ],
