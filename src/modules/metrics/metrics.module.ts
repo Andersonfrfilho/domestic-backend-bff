@@ -7,6 +7,9 @@ import {
 } from '@willsoto/nestjs-prometheus';
 
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
+import { OpenTelemetryRequestIdInterceptor } from '@modules/shared/interceptors/opentelemetry-request-id.interceptor';
+import { TraceStackInterceptor } from '@modules/shared/interceptors/trace-stack.interceptor';
+import { TraceStackService } from '@modules/shared/services/trace-stack.service';
 
 @Module({
   imports: [
@@ -27,10 +30,20 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
       help: 'Total number of HTTP requests',
       labelNames: ['method', 'route', 'status_code', 'service'],
     }),
+    TraceStackService,
     HttpMetricsInterceptor,
+    OpenTelemetryRequestIdInterceptor,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TraceStackInterceptor,
+    },
     {
       provide: APP_INTERCEPTOR,
       useExisting: HttpMetricsInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: OpenTelemetryRequestIdInterceptor,
     },
   ],
 })
