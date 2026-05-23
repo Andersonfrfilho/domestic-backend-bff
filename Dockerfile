@@ -1,16 +1,27 @@
+# ===== Build Arguments =====
+ARG GIT_COMMIT_HASH="unknown"
+ARG GIT_COMMIT_HASH_FULL="unknown"
+ARG GIT_BRANCH="unknown"
+ARG BUILD_DATE="unknown"
+
 # ===== STAGE 1: Build =====
 FROM node:25-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy all package files
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm ci
+# Convert pnpm-lock to npm format or use pnpm with clean install
+RUN npm install -g pnpm && \
+    rm -f pnpm-lock.yaml && \
+    npm install
 
 COPY . .
 
 RUN npm run build
 
+# Compila migrations separadamente (se existirem)
 RUN if ls src/modules/shared/providers/database/migrations/*.ts 2>/dev/null; then \
     npx tsc src/modules/shared/providers/database/migrations/*.ts \
       --outDir dist/modules/shared/providers/database/migrations \
@@ -24,6 +35,18 @@ RUN if ls src/modules/shared/providers/database/migrations/*.ts 2>/dev/null; the
 
 # ===== STAGE 2: Runtime (Production) =====
 FROM node:25-alpine
+
+# Labels com informações de build
+ARG GIT_COMMIT_HASH
+ARG GIT_COMMIT_HASH_FULL
+ARG GIT_BRANCH
+ARG BUILD_DATE
+
+LABEL git.commit.hash="${GIT_COMMIT_HASH}" \
+      git.commit.hash.full="${GIT_COMMIT_HASH_FULL}" \
+      git.branch="${GIT_BRANCH}" \
+      build.date="${BUILD_DATE}" \
+      maintainer="Anderson"
 
 WORKDIR /app
 
@@ -41,4 +64,4 @@ RUN mkdir -p logs
 
 # PRODUÇÃO: Inicia diretamente (sem rodar migrations)
 # Migrations devem ser rodadas manualmente ou via pipeline CI/CD
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main"]
