@@ -49,6 +49,7 @@ tsConfigPathsRegister({
     MetricsModule,
     ConfigModule,
     LoggerModule.forRoot({
+      enableTraceStack: true,
       level: process.env.LOG_LEVEL || 'info',
       interceptorExcludedPaths: ['/health', '/metrics', '/docs', '**/metrics'],
     }),
