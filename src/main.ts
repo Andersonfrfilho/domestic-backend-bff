@@ -12,7 +12,7 @@ import { swaggerCustomOptions } from '@config/swagger-custom.config';
 import { swaggerConfig } from '@config/swagger.config';
 import { AppErrorFactory } from '@modules/error';
 import { docsFactory } from '@modules/shared/docs/docs.factory';
-import { CamelCaseResponseInterceptor } from '@modules/shared/interceptors/camel-case-response.interceptor';
+// import { CamelCaseResponseInterceptor } from '@modules/shared/interceptors/camel-case-response.interceptor';
 
 import * as tsConfig from '../tsconfig.json';
 
@@ -55,7 +55,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new CamelCaseResponseInterceptor());
+  // app.useGlobalInterceptors(new CamelCaseResponseInterceptor());
 
   const environment = app.get<EnvironmentProviderInterface>(ENVIRONMENT_SERVICE_PROVIDER);
   const document = SwaggerModule.createDocument(app, swaggerConfig(environment));
