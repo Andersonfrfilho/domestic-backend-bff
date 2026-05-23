@@ -19,6 +19,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { CompanyModule } from './modules/company/company.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ErrorModule } from './modules/error/error.module';
+import { PackageContextMiddleware } from '@app/shared/middleware/package-context.middleware';
 import { HomeModule } from './modules/home/home.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { NavigationModule } from './modules/navigation/navigation.module';
@@ -78,6 +79,6 @@ tsConfigPathsRegister({
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestContextMiddleware).forRoutes('*');
+    consumer.apply(RequestContextMiddleware, PackageContextMiddleware).forRoutes('*');
   }
 }
