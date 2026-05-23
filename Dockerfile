@@ -12,8 +12,8 @@ WORKDIR /workspace
 # Copy backend libraries for npm file:// dependencies (before service code)
 COPY backend-package-nestjs ./backend-package-nestjs
 
-# Copy service source (domestic-backend-bff because build context is parent directory)
-COPY domestic-backend-bff ./app
+# Copy service source (. because build context is the service repo root)
+COPY . ./app
 WORKDIR /workspace/app
 
 # Install dependencies
