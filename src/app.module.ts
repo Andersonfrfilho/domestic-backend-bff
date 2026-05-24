@@ -7,6 +7,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { register as tsConfigPathsRegister } from 'tsconfig-paths';
 
+import { PackageContextMiddleware } from '@app/shared/middleware/package-context.middleware';
 import { ConfigModule } from '@config/config.module';
 import { HealthModule } from '@modules/health/health.module';
 
@@ -19,7 +20,6 @@ import { ChatModule } from './modules/chat/chat.module';
 import { CompanyModule } from './modules/company/company.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ErrorModule } from './modules/error/error.module';
-import { PackageContextMiddleware } from '@app/shared/middleware/package-context.middleware';
 import { HomeModule } from './modules/home/home.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { NavigationModule } from './modules/navigation/navigation.module';
@@ -51,8 +51,9 @@ tsConfigPathsRegister({
     ConfigModule,
     LoggerModule.forRoot({
       enableTraceStack: true,
+      colorize: true,
       level: process.env.LOG_LEVEL || 'info',
-      interceptorExcludedPaths: ['/health', '/metrics', '/docs', '**/metrics'],
+      interceptorExcludedPaths: ['/health', '/metrics', '/docs', '**/metrics', '/bff/metrics'],
     }),
     // Infraestrutura BFF
     BffMongoModule,
