@@ -52,6 +52,7 @@ tsConfigPathsRegister({
     LoggerModule.forRoot({
       enableTraceStack: true,
       colorize: true,
+      isProduction: false,
       level: process.env.LOG_LEVEL || 'info',
       interceptorExcludedPaths: ['/health', '/metrics', '/docs', '**/metrics', '/bff/metrics'],
     }),
