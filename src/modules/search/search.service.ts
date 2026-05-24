@@ -1,24 +1,25 @@
 import * as crypto from 'node:crypto';
 
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
-import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
-import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
-import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
+import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 
+import type { SearchRequestDto } from './dtos/search-request.dto';
 import type {
   SearchFilter,
   SearchLayoutComponent,
   SearchProviderItem,
   SearchResponseDto,
 } from './dtos/search-response.dto';
-import type { SearchRequestDto } from './dtos/search-request.dto';
 
 const DEFAULT_FILTERS: SearchFilter[] = [
   {
@@ -89,6 +90,7 @@ export class SearchService {
     private readonly screenConfig: ScreenConfigService,
   ) {}
 
+  @TraceMethod()
   async search(params: SearchRequestDto): Promise<SearchResponseDto> {
     const cacheKey = CACHE_KEYS.SEARCH(this.hashParams(params));
     const cached = await this.cache.get<SearchResponseDto>(cacheKey);
@@ -99,7 +101,10 @@ export class SearchService {
       this.screenConfig.getActiveScreen('search'),
     ]);
 
-    const apiData = apiResult.status === 'fulfilled' ? apiResult.value : { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+    const apiData =
+      apiResult.status === 'fulfilled'
+        ? apiResult.value
+        : { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
     const screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
 
     if (apiResult.status === 'rejected') {
@@ -156,7 +161,13 @@ export class SearchService {
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
 
-    const raw = await this.api.get<Record<string, unknown>[] | { data?: Record<string, unknown>[]; meta?: { total?: number; page?: number; limit?: number } }>({
+    const raw = await this.api.get<
+      | Record<string, unknown>[]
+      | {
+          data?: Record<string, unknown>[];
+          meta?: { total?: number; page?: number; limit?: number };
+        }
+    >({
       path: `/v1/providers?${qs.toString()}`,
     });
 
@@ -207,10 +218,6 @@ export class SearchService {
   }
 
   private hashParams(params: SearchRequestDto): string {
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(params as unknown as Record<string, unknown>))
-      .digest('hex')
-      .slice(0, 12);
+    return crypto.createHash('sha256').update(JSON.stringify(params)).digest('hex').slice(0, 12);
   }
 }

@@ -1,12 +1,13 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import type {
   ContractorDashboard,
@@ -41,6 +42,7 @@ export class DashboardService {
     private readonly cache: BffCacheService,
   ) {}
 
+  @TraceMethod()
   async getContractorDashboard({
     userId,
     headers,
@@ -104,9 +106,7 @@ export class DashboardService {
       const data = await this.api.get<
         { data?: Record<string, unknown>[] } | Record<string, unknown>[]
       >({ path, headers });
-      const items = Array.isArray(data)
-        ? data
-        : ((data as { data?: Record<string, unknown>[] }).data ?? []);
+      const items = Array.isArray(data) ? data : (data.data ?? []);
       return items.map((r) => ({
         id: asString(r['id']),
         status: asString(r['status']),

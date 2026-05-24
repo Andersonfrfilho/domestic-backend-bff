@@ -1,14 +1,13 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
-import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
-import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import type {
   CreateRoomParams,
   CreateRoomResult,
@@ -21,12 +20,13 @@ import type {
   SendMessageParams,
   SendMessageResult,
 } from './chat.types';
+import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
+import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 
 export type { CreateRoomDto, SendMessageDto } from './chat.types';
 
 @Injectable()
 export class ChatService {
-
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @InjectModel(ChatRoom.name)
@@ -37,6 +37,7 @@ export class ChatService {
     private readonly cache: BffCacheService,
   ) {}
 
+  @TraceMethod()
   async createRoom({ dto, contractorId, providerId }: CreateRoomParams): CreateRoomResult {
     const existing = await this.roomModel
       .findOne({ service_request_id: dto.service_request_id })
@@ -144,7 +145,7 @@ export class ChatService {
     this.assertParticipant(room, userId);
 
     await this.messageModel.updateMany(
-      { room_id: roomId as unknown as Types.ObjectId, sender_id: { $ne: userId }, read: false },
+      { room_id: roomId, sender_id: { $ne: userId }, read: false },
       { read: true },
     );
 

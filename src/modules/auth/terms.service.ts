@@ -1,10 +1,11 @@
-import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
+import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
 import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
 export interface TermsVersionDto {
   id: string;
@@ -23,17 +24,20 @@ export interface CheckPendingTermsDto {
 
 @Injectable()
 export class TermsService {
-
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
   ) {}
 
+  @TraceMethod()
   async getCurrentVersion(): Promise<TermsVersionDto | null> {
     const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/current`);
 
     if (!response.ok) {
-      this.logProvider.error({ message: `Failed to get current terms version: ${response.status}`, context: 'TermsService.getCurrentVersion' });
+      this.logProvider.error({
+        message: `Failed to get current terms version: ${response.status}`,
+        context: 'TermsService.getCurrentVersion',
+      });
       throw new BadRequestException('Falha ao obter versão atual dos termos');
     }
 
@@ -44,7 +48,10 @@ export class TermsService {
     const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/versions`);
 
     if (!response.ok) {
-      this.logProvider.error({ message: `Failed to list terms versions: ${response.status}`, context: 'TermsService.listVersions' });
+      this.logProvider.error({
+        message: `Failed to list terms versions: ${response.status}`,
+        context: 'TermsService.listVersions',
+      });
       throw new BadRequestException('Falha ao listar versões dos termos');
     }
 
@@ -63,7 +70,10 @@ export class TermsService {
     });
 
     if (!response.ok) {
-      this.logProvider.error({ message: `Failed to check pending terms: ${response.status}`, context: 'TermsService.checkPending' });
+      this.logProvider.error({
+        message: `Failed to check pending terms: ${response.status}`,
+        context: 'TermsService.checkPending',
+      });
       throw new BadRequestException('Falha ao verificar termos pendentes');
     }
 
@@ -74,7 +84,10 @@ export class TermsService {
     return result;
   }
 
-  async acceptTerms(userId: string, termsVersionId?: string): Promise<{ success: boolean; message: string; termsVersion: string }> {
+  async acceptTerms(
+    userId: string,
+    termsVersionId?: string,
+  ): Promise<{ success: boolean; message: string; termsVersion: string }> {
     const response = await fetch(`${this.env.apiBaseUrl}/v1/auth/terms/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -82,11 +95,16 @@ export class TermsService {
     });
 
     if (!response.ok) {
-      this.logProvider.error({ message: `Failed to accept terms: ${response.status}`, context: 'TermsService.acceptTerms' });
+      this.logProvider.error({
+        message: `Failed to accept terms: ${response.status}`,
+        context: 'TermsService.acceptTerms',
+      });
       throw new BadRequestException('Falha ao aceitar termos');
     }
 
-    const result = await safeJsonParse<{ success: boolean; message: string; termsVersion: string }>(response);
+    const result = await safeJsonParse<{ success: boolean; message: string; termsVersion: string }>(
+      response,
+    );
     if (!result) {
       throw new BadRequestException('Empty response from accept terms');
     }

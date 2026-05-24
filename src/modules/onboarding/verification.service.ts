@@ -1,15 +1,17 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Injectable, Inject } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+import { AuthService } from '@modules/auth/auth.service';
 import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { AuthService } from '@modules/auth/auth.service';
-import { VerificationServiceInterface } from './interfaces/verification-service.interface';
+
+import { VerificationResponseDto } from './dtos/verification-response.dto';
 import { VerificationSendRequestDto } from './dtos/verification-send-request.dto';
 import { VerificationVerifyRequestDto } from './dtos/verification-verify-request.dto';
-import { VerificationResponseDto } from './dtos/verification-response.dto';
+import { VerificationServiceInterface } from './interfaces/verification-service.interface';
 
 @Injectable()
 export class VerificationService implements VerificationServiceInterface {
@@ -20,6 +22,7 @@ export class VerificationService implements VerificationServiceInterface {
     private readonly authService: AuthService,
   ) {}
 
+  @TraceMethod()
   async sendCode(dto: VerificationSendRequestDto): Promise<VerificationResponseDto> {
     try {
       if (dto.type === 'email') {
@@ -44,11 +47,17 @@ export class VerificationService implements VerificationServiceInterface {
       });
 
       if (error instanceof AppError) throw error;
-      throw AppErrorFactory.businessLogic({ message: 'Falha ao enviar código de verificação', code: 'VERIFICATION_SEND_FAILED' });
+      throw AppErrorFactory.businessLogic({
+        message: 'Falha ao enviar código de verificação',
+        code: 'VERIFICATION_SEND_FAILED',
+      });
     }
   }
 
-  async verifyCode(dto: VerificationVerifyRequestDto, authorization?: string): Promise<VerificationResponseDto> {
+  async verifyCode(
+    dto: VerificationVerifyRequestDto,
+    authorization?: string,
+  ): Promise<VerificationResponseDto> {
     try {
       const verified = await this.verifyCodeWithApi(dto);
 
@@ -77,7 +86,10 @@ export class VerificationService implements VerificationServiceInterface {
       });
 
       if (error instanceof AppError) throw error;
-      throw AppErrorFactory.businessLogic({ message: 'Falha ao verificar código', code: 'VERIFICATION_VERIFY_FAILED' });
+      throw AppErrorFactory.businessLogic({
+        message: 'Falha ao verificar código',
+        code: 'VERIFICATION_VERIFY_FAILED',
+      });
     }
   }
 

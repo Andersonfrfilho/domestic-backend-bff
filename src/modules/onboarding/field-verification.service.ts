@@ -1,8 +1,10 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { ConflictException, Injectable, Inject } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import { ApiClientService } from '../shared/api-client/api-client.service';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+
+import { ApiClientService } from '../shared/api-client/api-client.service';
 
 export interface VerificationResult {
   available: boolean;
@@ -18,6 +20,7 @@ export class FieldVerificationService {
     private readonly apiClient: ApiClientService,
   ) {}
 
+  @TraceMethod()
   async verifyEmail(email: string): Promise<VerificationResult> {
     const normalized = email.toLowerCase().trim();
 

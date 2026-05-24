@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 
 @Injectable()
 export class CompanyService {
   constructor(private readonly apiClient: ApiClientService) {}
 
+  @TraceMethod()
   async listUserCompanies(userId: string) {
     return this.apiClient.get({
       path: '/companies/me',

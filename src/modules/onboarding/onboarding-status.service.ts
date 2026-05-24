@@ -1,10 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+import { AuthService } from '@modules/auth/auth.service';
 import type { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { AuthService } from '@modules/auth/auth.service';
 
 import type { OnboardingStep } from './dtos/onboarding-status-response.dto';
 import { OnboardingStatusResponseDto } from './dtos/onboarding-status-response.dto';
@@ -22,6 +23,7 @@ export class OnboardingStatusService {
     private readonly authService: AuthService,
   ) {}
 
+  @TraceMethod()
   async getStatus(keycloakId: string, accessToken: string): Promise<OnboardingStatusResponseDto> {
     this.logProvider.info({
       message: `Getting onboarding status for user: ${keycloakId}`,

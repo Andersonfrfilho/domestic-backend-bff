@@ -1,14 +1,14 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
-import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
-import type { Navigation } from '@modules/shared/navigation/interfaces/navigation.interface';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
-
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import type { Navigation } from '@modules/shared/navigation/interfaces/navigation.interface';
+import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
+import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
 
 import type {
   AppConfigResponseDto,
@@ -43,6 +43,7 @@ export class AppConfigService {
     private readonly cache: BffCacheService,
   ) {}
 
+  @TraceMethod()
   async getAppConfig(): Promise<AppConfigResponseDto> {
     const cached = await this.cache.get<AppConfigResponseDto>(CACHE_KEYS.APP_CONFIG);
     if (cached) return cached;
@@ -83,7 +84,10 @@ export class AppConfigService {
     };
 
     await this.cache.set({ key: CACHE_KEYS.APP_CONFIG, value: response, ttlSeconds: CACHE_TTL });
-    this.logProvider.info({ message: 'App config assembled', context: 'AppConfigService.getAppConfig' });
+    this.logProvider.info({
+      message: 'App config assembled',
+      context: 'AppConfigService.getAppConfig',
+    });
     return response;
   }
 }

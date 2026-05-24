@@ -1,14 +1,16 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Injectable, Inject } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+import { GeocodingService } from '@modules/auth/geocoding.service';
 import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { GeocodingService } from '@modules/auth/geocoding.service';
-import { RegistrationServiceInterface } from './interfaces/registration-service.interface';
+
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { RegisterResponseDto } from './dtos/register-response.dto';
+import { RegistrationServiceInterface } from './interfaces/registration-service.interface';
 
 @Injectable()
 export class RegistrationService implements RegistrationServiceInterface {
@@ -19,6 +21,7 @@ export class RegistrationService implements RegistrationServiceInterface {
     private readonly geocoding: GeocodingService,
   ) {}
 
+  @TraceMethod()
   async register(dto: RegisterRequestDto): Promise<RegisterResponseDto> {
     try {
       const result = await this.createApiUser(dto);
@@ -40,8 +43,15 @@ export class RegistrationService implements RegistrationServiceInterface {
         context: `${this.constructor.name}.register`,
       });
 
-      if (error.message?.includes('409') || error.message?.includes('already exists') || error.message?.includes('E-mail já está em uso')) {
-        throw AppErrorFactory.conflict({ message: 'E-mail já está em uso', code: 'EMAIL_ALREADY_EXISTS' });
+      if (
+        error.message?.includes('409') ||
+        error.message?.includes('already exists') ||
+        error.message?.includes('E-mail já está em uso')
+      ) {
+        throw AppErrorFactory.conflict({
+          message: 'E-mail já está em uso',
+          code: 'EMAIL_ALREADY_EXISTS',
+        });
       }
 
       if (error instanceof AppError) throw error;
@@ -108,7 +118,9 @@ export class RegistrationService implements RegistrationServiceInterface {
     }
   }
 
-  private async createApiUser(dto: RegisterRequestDto): Promise<{ keycloakId: string; userId: string }> {
+  private async createApiUser(
+    dto: RegisterRequestDto,
+  ): Promise<{ keycloakId: string; userId: string }> {
     return this.api.post<{ keycloakId: string; userId: string }>({
       path: '/v1/onboarding/register',
       body: {
@@ -119,25 +131,31 @@ export class RegistrationService implements RegistrationServiceInterface {
         password: dto.password,
         userType: dto.userType ?? 'contractor',
         termsAccepted: dto.termsAccepted,
-        ...(dto.cpf || dto.cnpj || dto.rg || dto.passport ? { document: dto.cpf || dto.cnpj || dto.rg || dto.passport } : {}),
-        ...(dto.cnpj ? {
-          companyName: dto.companyName,
-          tradeName: dto.tradeName,
-        } : {}),
+        ...(dto.cpf || dto.cnpj || dto.rg || dto.passport
+          ? { document: dto.cpf || dto.cnpj || dto.rg || dto.passport }
+          : {}),
+        ...(dto.cnpj
+          ? {
+              companyName: dto.companyName,
+              tradeName: dto.tradeName,
+            }
+          : {}),
         // Endereço (opcional, salvo junto com o cadastro)
-        ...(dto.cep && dto.street && dto.number ? {
-          address: {
-            zipCode: dto.cep,
-            street: dto.street,
-            number: dto.number,
-            complement: dto.complement ?? null,
-            neighborhood: dto.neighborhood ?? null,
-            city: dto.city ?? null,
-            state: dto.state ?? null,
-            latitude: dto.lat ?? null,
-            longitude: dto.lng ?? null,
-          },
-        } : {}),
+        ...(dto.cep && dto.street && dto.number
+          ? {
+              address: {
+                zipCode: dto.cep,
+                street: dto.street,
+                number: dto.number,
+                complement: dto.complement ?? null,
+                neighborhood: dto.neighborhood ?? null,
+                city: dto.city ?? null,
+                state: dto.state ?? null,
+                latitude: dto.lat ?? null,
+                longitude: dto.lng ?? null,
+              },
+            }
+          : {}),
       },
     });
   }

@@ -1,16 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
 import * as crypto from 'node:crypto';
 
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
-import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
-import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
-import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
-import type { ScreenConfig } from '@modules/shared/screen/schemas/screen-config.schema';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
+import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
+import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
+import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
 
 import type {
   FeaturedCategory,
@@ -103,6 +104,7 @@ export class HomeService {
     private readonly screenConfig: ScreenConfigService,
   ) {}
 
+  @TraceMethod()
   async getHome(): Promise<HomeResponseDto> {
     const cached = await this.cache.get<HomeResponseDto>(CACHE_KEYS.HOME);
     if (cached) return cached;
@@ -115,7 +117,7 @@ export class HomeService {
 
     let categories = categoriesResult.status === 'fulfilled' ? categoriesResult.value : [];
     let providers = providersResult.status === 'fulfilled' ? providersResult.value : [];
-    let screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
+    const screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
 
     const hasPartialFailure =
       categoriesResult.status === 'rejected' ||
@@ -198,9 +200,7 @@ export class HomeService {
     });
     const items = Array.isArray(data)
       ? data
-      : ((data as { data?: unknown[]; items?: unknown[] }).data ??
-        (data as { items?: unknown[] }).items ??
-        []);
+      : (data.data ?? (data as { items?: unknown[] }).items ?? []);
     return (items as Record<string, unknown>[]).map((c) => ({
       id: asString(c['id']),
       name: asString(c['name']),
@@ -213,7 +213,7 @@ export class HomeService {
     const data = await this.api.get<{ data?: unknown[] } | unknown[]>({
       path: '/v1/providers?sort=rating&limit=10&available=true',
     });
-    const items = Array.isArray(data) ? data : ((data as { data?: unknown[] }).data ?? []);
+    const items = Array.isArray(data) ? data : (data.data ?? []);
     return (items as Record<string, unknown>[]).map((p) => ({
       id: asString(p['id']),
       businessName: asString(p['business_name'] ?? p['businessName']),

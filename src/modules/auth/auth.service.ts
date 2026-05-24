@@ -1,6 +1,7 @@
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable } from '@nestjs/common';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
 import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
 import { AppError } from '@modules/error/app.error';
@@ -35,6 +36,7 @@ export class AuthService {
     @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
   ) {}
 
+  @TraceMethod()
   async forgotPassword(email: string): Promise<void> {
     try {
       const adminToken = await this.getAdminToken();

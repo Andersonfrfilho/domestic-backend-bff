@@ -1,13 +1,15 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Injectable, Inject } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+import { GeocodingService } from '@modules/auth/geocoding.service';
 import { AppError } from '@modules/error/app.error';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
-import { GeocodingService } from '@modules/auth/geocoding.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
-import { CepServiceInterface } from './interfaces/cep-service.interface';
+
 import { CepResponseDto } from './dtos/cep-response.dto';
+import { CepServiceInterface } from './interfaces/cep-service.interface';
 
 @Injectable()
 export class CepService implements CepServiceInterface {
@@ -17,6 +19,7 @@ export class CepService implements CepServiceInterface {
     private readonly geocoding: GeocodingService,
   ) {}
 
+  @TraceMethod()
   async lookupCep(cep: string): Promise<CepResponseDto> {
     const cleanCep = cep.replace(/\D/g, '');
 
@@ -28,7 +31,9 @@ export class CepService implements CepServiceInterface {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
 
       if (!response.ok) {
-        throw AppErrorFactory.internalServer({ message: `ViaCEP request failed: ${response.status}` });
+        throw AppErrorFactory.internalServer({
+          message: `ViaCEP request failed: ${response.status}`,
+        });
       }
 
       const data = await safeJsonParse<{

@@ -1,12 +1,13 @@
+import { LOGGER_PROVIDER } from '@adatechnology/logger';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
-import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
+import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import type {
   FetchProviderParams,
@@ -43,6 +44,7 @@ export class ProviderProfileService {
     private readonly cache: BffCacheService,
   ) {}
 
+  @TraceMethod()
   async getProfile({ providerId, headers }: GetProfileParams): GetProfileResult {
     const cacheKey = CACHE_KEYS.PROVIDER_PROFILE(providerId);
     const cached = await this.cache.get<ProviderProfileResponse>(cacheKey);
@@ -122,9 +124,7 @@ export class ProviderProfileService {
         path: `/v1/reviews/provider/${providerId}?limit=5&sort=created_at`,
         headers,
       });
-      const items = Array.isArray(data)
-        ? data
-        : ((data as { data?: Record<string, unknown>[] }).data ?? []);
+      const items = Array.isArray(data) ? data : (data.data ?? []);
 
       return items.map((r) => ({
         rating: Number(r['rating'] ?? 0),
