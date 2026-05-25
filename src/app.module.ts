@@ -1,6 +1,7 @@
 import {
   HTTP_LOGGING_INTERCEPTOR,
   LoggerModule,
+  REQUEST_ID_FORMAT,
   RequestContextMiddleware,
 } from '@adatechnology/nestjs-logger';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
@@ -50,6 +51,7 @@ tsConfigPathsRegister({
     ConfigModule,
     LoggerModule.forRoot({
       enableTraceStack: true,
+      requestIdFormat: REQUEST_ID_FORMAT.SHORT_HASH,
       colorize: true,
       isProduction: false,
       appName: 'backend-bff',
