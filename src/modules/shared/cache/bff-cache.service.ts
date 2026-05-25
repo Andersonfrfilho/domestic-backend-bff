@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import type { BffCachePublishParams, BffCacheSetParams } from './bff-cache.types';
 

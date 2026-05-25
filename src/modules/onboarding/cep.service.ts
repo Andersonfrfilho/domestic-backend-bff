@@ -1,4 +1,4 @@
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import { Injectable, Inject } from '@nestjs/common';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';

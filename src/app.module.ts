@@ -2,7 +2,7 @@ import {
   HTTP_LOGGING_INTERCEPTOR,
   LoggerModule,
   RequestContextMiddleware,
-} from '@adatechnology/logger';
+} from '@adatechnology/nestjs-logger';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { register as tsConfigPathsRegister } from 'tsconfig-paths';

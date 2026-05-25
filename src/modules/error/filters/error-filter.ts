@@ -1,4 +1,4 @@
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { LOGGER_PROVIDER, getContext } from '@adatechnology/nestjs-logger';
 import {
   ArgumentsHost,
   Catch,
@@ -70,8 +70,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     try {
-      const loggerLib: any = require('@adatechnology/logger');
-      const contextStore = loggerLib?.requestContext?.getStore?.();
+      const contextStore = getContext?.();
       if (contextStore?.requestId) {
         return contextStore.requestId;
       }
@@ -131,14 +130,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
   }
 
-  private handleNonAppError(exception: unknown, request: FastifyRequest, response: FastifyReply, requestId: string, isExcludedPath = false) {
+  private handleNonAppError(
+    exception: unknown,
+    request: FastifyRequest,
+    response: FastifyReply,
+    requestId: string,
+    isExcludedPath = false,
+  ) {
     const status = this.getStatus(exception);
     const message = this.getMessage(exception);
     let code = 'INTERNAL_ERROR';
     let type = 'INTERNAL_SERVER';
     let details: unknown;
 
-    if (status === HttpStatus.NOT_FOUND) {
+    if ((status as HttpStatus) === HttpStatus.NOT_FOUND) {
       code = 'NOT_FOUND';
       type = 'NOT_FOUND';
     }
@@ -218,7 +223,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const descriptions: Record<string, string> = {
       VALIDATION: 'Alguns campos estão incorretos ou incompletos. Verifique e tente novamente.',
-      AUTHENTICATION: 'Sua sessão expirou ou as credenciais estão incorretas. Faça login novamente.',
+      AUTHENTICATION:
+        'Sua sessão expirou ou as credenciais estão incorretas. Faça login novamente.',
       AUTHORIZATION: 'Você não tem permissão para realizar esta ação.',
       NOT_FOUND: 'O recurso solicitado não foi encontrado.',
       CONFLICT: 'Já existe um registro com estas informações.',

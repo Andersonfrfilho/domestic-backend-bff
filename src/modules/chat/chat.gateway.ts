@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
@@ -50,7 +50,7 @@ export class ChatGateway
         this.logProvider.warn({ message: `Malformed Redis message on channel ${channel}`, context: 'ChatGateway.onModuleInit' });
       }
     });
-    this.subscriber.psubscribe('chat:*');
+    void this.subscriber.psubscribe('chat:*');
     this.logProvider.info({ message: 'ChatGateway subscribed to Redis chat:* channels', context: 'ChatGateway.onModuleInit' });
   }
 
@@ -105,6 +105,7 @@ export class ChatGateway
     @MessageBody() payload: { room_id: string; content: string },
   ) {
     const userId: string = client.data['userId'];
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     try {
       await this.chatService.sendMessage({
         roomId: payload.room_id,

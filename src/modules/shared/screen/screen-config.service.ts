@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { ScreenConfig, ScreenConfigDocument } from './schemas/screen-config.schema';
 import type { ScreenConfigUpsertParams, ScreenConfigUpsertResult } from './screen-config.types';
