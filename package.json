@@ -1,7 +1,7 @@
 {
   "name": "backend-bff",
   "version": "0.0.1",
-  "description": "Backend for Frontend \u2014 domestic platform",
+  "description": "Backend for Frontend — domestic platform",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -50,7 +50,7 @@
     "@adatechnology/nestjs-auth-keycloak": "latest",
     "@adatechnology/nestjs-cache": "latest",
     "@adatechnology/nestjs-http-client": "latest",
-    "@adatechnology/nestjs-logger": "latest",
+    "@adatechnology/nestjs-logger": "0.1.1",
     "@faker-js/faker": "^10.1.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/multipart": "^10.0.0",
