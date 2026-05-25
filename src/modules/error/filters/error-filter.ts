@@ -70,9 +70,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     try {
-      const contextStore = getContext?.();
-      if (contextStore?.requestId) {
-        return contextStore.requestId;
+      const contextStore = getContext?.() as any;
+      if (contextStore?.requestId && typeof contextStore.requestId === 'string') {
+        return contextStore.requestId as string;
       }
     } catch {
       // ignore
