@@ -52,7 +52,7 @@ tsConfigPathsRegister({
     LoggerModule.forRoot({
       enableTraceStack: true,
       requestIdFormat: REQUEST_ID_FORMAT.SHORT_HASH,
-      colorize: process.stdout.isTTY ?? false,
+      colorize: process.stdout.isTTY,
       isProduction: false,
       appName: 'backend-bff',
       appVersion: '0.0.1',
