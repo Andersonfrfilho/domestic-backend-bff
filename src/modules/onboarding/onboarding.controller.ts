@@ -11,7 +11,6 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
 import {
   ApiBody,
   ApiConsumes,
@@ -20,10 +19,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import type { FastifyRequest } from 'fastify';
 
-import { AddressRequestDto } from './dtos/address-request.dto';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+
 import { CepService } from './cep.service';
 import { DocumentService } from './document.service';
+import { AddressRequestDto } from './dtos/address-request.dto';
 import { CepResponseDto } from './dtos/cep-response.dto';
 import { FieldVerificationResponseDto } from './dtos/field-verification-response.dto';
 import { OnboardingStatusResponseDto } from './dtos/onboarding-status-response.dto';
@@ -66,6 +68,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
+  @TraceMethod()
   async register(@Body() body: RegisterRequestDto): Promise<RegisterResponseDto> {
     return this.registrationService.register(body);
   }
@@ -74,9 +77,11 @@ export class OnboardingController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Salvar endereço pós-cadastro',
-    description: 'Persiste o endereço do usuário durante o onboarding. Não requer autenticação — identifica o usuário pelo keycloakId.',
+    description:
+      'Persiste o endereço do usuário durante o onboarding. Não requer autenticação — identifica o usuário pelo keycloakId.',
   })
   @ApiResponse({ status: 201, description: 'Endereço salvo.' })
+  @TraceMethod()
   async saveAddress(@Body() body: AddressRequestDto): Promise<{ addressId: string }> {
     return this.registrationService.saveAddress(body);
   }
@@ -88,6 +93,7 @@ export class OnboardingController {
     description: 'Envia código por email ou SMS. QA Mode: email=0000, telefone=últimos 4 dígitos.',
   })
   @ApiResponse({ status: 200, description: 'Código enviado.', type: VerificationResponseDto })
+  @TraceMethod()
   async sendVerification(
     @Body() body: VerificationSendRequestDto,
   ): Promise<VerificationResponseDto> {
@@ -102,6 +108,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Código verificado.', type: VerificationResponseDto })
   @ApiResponse({ status: 400, description: 'Código inválido ou expirado.' })
+  @TraceMethod()
   async verifyCode(
     @Body() body: VerificationVerifyRequestDto,
     @Headers('authorization') authorization?: string,
@@ -129,6 +136,7 @@ export class OnboardingController {
     },
   })
   @ApiResponse({ status: 200, description: 'Documento enviado.', type: UploadDocumentResponseDto })
+  @TraceMethod()
   async uploadDocument(
     @Req() req: FastifyRequest,
     @Headers('x-user-id') keycloakId?: string,
@@ -165,7 +173,7 @@ export class OnboardingController {
       filename,
       path: '',
       stream: undefined as any,
-    } as Express.Multer.File;
+    };
 
     return this.documentService.uploadDocument(keycloakId || '', file, documentType);
   }
@@ -178,6 +186,7 @@ export class OnboardingController {
   @ApiParam({ name: 'cep', description: 'CEP com 8 dígitos', example: '01001000' })
   @ApiResponse({ status: 200, description: 'Endereço encontrado.', type: CepResponseDto })
   @ApiResponse({ status: 404, description: 'CEP não encontrado.' })
+  @TraceMethod()
   async lookupCep(@Param('cep') cep: string): Promise<CepResponseDto> {
     return this.cepService.lookupCep(cep);
   }
@@ -195,6 +204,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 409, description: 'Email já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  @TraceMethod()
   async verifyEmail(@Body() body: VerifyEmailRequestDto): Promise<FieldVerificationResponseDto> {
     return this.fieldVerificationService.verifyEmail(body.email);
   }
@@ -212,6 +222,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 409, description: 'Telefone já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  @TraceMethod()
   async verifyPhone(@Body() body: VerifyPhoneRequestDto): Promise<FieldVerificationResponseDto> {
     return this.fieldVerificationService.verifyPhone(body.phone);
   }
@@ -229,6 +240,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 409, description: 'Documento já cadastrado.' })
   @ApiResponse({ status: 429, description: 'Rate limit excedido.' })
+  @TraceMethod()
   async verifyDocument(
     @Body() body: VerifyDocumentRequestDto,
   ): Promise<FieldVerificationResponseDto> {
@@ -243,6 +255,7 @@ export class OnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Status calculado.', type: OnboardingStatusResponseDto })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @TraceMethod()
   async getOnboardingStatus(
     @Headers('x-user-id') keycloakId: string,
     @Headers('authorization') authorization?: string,

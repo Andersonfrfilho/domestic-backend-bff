@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, Inject, Param, Put } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
@@ -23,6 +24,7 @@ export class NotificationController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   list(@Headers() headers: Record<string, string>) {
     return this.api.get({ path: '/v1/notifications', headers });
   }
@@ -34,6 +36,7 @@ export class NotificationController {
     schema: { type: 'object', properties: { count: { type: 'number', example: 5 } } },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   unreadCount(@Headers() headers: Record<string, string>) {
     return this.api.get({ path: '/v1/notifications/unread-count', headers });
   }
@@ -51,6 +54,7 @@ export class NotificationController {
     forbidden: true,
     notFound: true,
   })
+  @TraceMethod()
   markRead(@Param('id') id: string, @Headers() headers: Record<string, string>) {
     return this.api.put({ path: `/v1/notifications/${id}/read`, body: {}, headers });
   }
@@ -62,6 +66,7 @@ export class NotificationController {
     schema: { type: 'object', additionalProperties: true },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   markAllRead(@Body() _body: unknown, @Headers() headers: Record<string, string>) {
     return this.api.put({ path: '/v1/notifications/read-all', body: {}, headers });
   }

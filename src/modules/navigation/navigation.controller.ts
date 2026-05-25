@@ -10,10 +10,11 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
-import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 import type { Navigation } from '@modules/shared/navigation/interfaces/navigation.interface';
+import { NavigationConfigService } from '@modules/shared/navigation/navigation-config.service';
+import { NAVIGATION_CONFIG_SERVICE } from '@modules/shared/navigation/navigation-config.token';
 
 const NAV_RESPONSE_SCHEMA = {
   type: 'object',
@@ -76,6 +77,7 @@ export class NavigationController {
     schema: { type: 'array', items: NAV_RESPONSE_SCHEMA },
   })
   @ApiAlternativeErrorResponses()
+  @TraceMethod()
   listAll() {
     return this.service.listAll();
   }
@@ -88,6 +90,7 @@ export class NavigationController {
     schema: NAV_RESPONSE_SCHEMA,
   })
   @ApiAlternativeErrorResponses({ notFound: true })
+  @TraceMethod()
   async getNavigation(@Param('screenId') screenId: string) {
     const config = await this.service.findOne(screenId);
     if (!config) {
@@ -129,6 +132,7 @@ export class NavigationController {
   })
   @ApiOkResponse({ description: 'Configuração criada/atualizada', schema: NAV_RESPONSE_SCHEMA })
   @ApiAlternativeErrorResponses({ badRequest: true })
+  @TraceMethod()
   upsertNavigation(@Param('screenId') screenId: string, @Body() body: Navigation) {
     return this.service.upsert({ screenId, navigation: body });
   }
@@ -147,6 +151,7 @@ export class NavigationController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true })
+  @TraceMethod()
   async deactivateNavigation(@Param('screenId') screenId: string) {
     await this.service.deactivate(screenId);
     return { screenId, isActive: false };

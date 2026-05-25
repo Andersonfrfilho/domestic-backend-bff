@@ -1,6 +1,7 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import { AppConfigService } from './app-config.service';
@@ -90,6 +91,7 @@ export class AppConfigController {
     },
   })
   @ApiAlternativeErrorResponses()
+  @TraceMethod()
   getAppConfig() {
     return this.service.getAppConfig();
   }

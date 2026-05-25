@@ -1,6 +1,8 @@
 import { BadRequestException, Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
+
 import { AddressService } from './address.service';
 import { AutocompleteResponseDto } from './dtos/autocomplete-response.dto';
 
@@ -13,11 +15,21 @@ export class AddressController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Autocomplete de endereço',
-    description: 'Busca sugestões de endereço por texto livre. Mínimo 3 caracteres. Cache Redis de 7 dias.',
+    description:
+      'Busca sugestões de endereço por texto livre. Mínimo 3 caracteres. Cache Redis de 7 dias.',
   })
-  @ApiQuery({ name: 'q', description: 'Texto de busca (mínimo 3 caracteres)', example: 'Rua Augusta, São Paulo' })
-  @ApiResponse({ status: 200, description: 'Sugestões de endereço.', type: AutocompleteResponseDto })
+  @ApiQuery({
+    name: 'q',
+    description: 'Texto de busca (mínimo 3 caracteres)',
+    example: 'Rua Augusta, São Paulo',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Sugestões de endereço.',
+    type: AutocompleteResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Query muito curta (mínimo 3 caracteres).' })
+  @TraceMethod()
   async autocomplete(@Query('q') query: string): Promise<AutocompleteResponseDto> {
     if (!query || query.trim().length < 3) {
       throw new BadRequestException('Query deve ter no mínimo 3 caracteres');

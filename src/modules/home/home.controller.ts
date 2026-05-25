@@ -1,6 +1,7 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import { HomeService } from './home.service';
@@ -81,6 +82,7 @@ export class HomeController {
     },
   })
   @ApiAlternativeErrorResponses()
+  @TraceMethod()
   getHome() {
     return this.service.getHome();
   }

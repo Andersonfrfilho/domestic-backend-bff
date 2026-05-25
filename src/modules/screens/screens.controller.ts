@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 import { ScreenComponent } from '@modules/shared/screen/schemas/screen-config.schema';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
@@ -41,6 +42,7 @@ export class ScreensController {
     },
   })
   @ApiAlternativeErrorResponses()
+  @TraceMethod()
   listAll() {
     return this.screenConfig.listAll();
   }
@@ -61,6 +63,7 @@ export class ScreensController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true, notFound: true })
+  @TraceMethod()
   async getScreen(@Param('screenId') screenId: string) {
     const config = await this.screenConfig.getActiveScreen(screenId);
     if (!config) {
@@ -115,6 +118,7 @@ export class ScreensController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true })
+  @TraceMethod()
   upsertScreen(
     @Param('screenId') screenId: string,
     @Body() body: { version: string; components: ScreenComponent[] },
@@ -140,6 +144,7 @@ export class ScreensController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true })
+  @TraceMethod()
   async deactivateScreen(@Param('screenId') screenId: string) {
     await this.screenConfig.deactivate(screenId);
     return { screenId, isActive: false };

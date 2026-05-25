@@ -9,6 +9,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import type { CreateRoomDto, SendMessageDto } from './chat.service';
@@ -58,6 +59,7 @@ export class ChatController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true, unauthorized: true, forbidden: true })
+  @TraceMethod()
   createRoom(
     @Body()
     body: (CreateRoomDto & { provider_id?: string }) & {
@@ -115,6 +117,7 @@ export class ChatController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   listRooms(@Headers() headers: Record<string, string>) {
     const userId = headers['x-user-id'] ?? '';
     return this.service.listRooms(userId);
@@ -157,6 +160,7 @@ export class ChatController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true, notFound: true })
+  @TraceMethod()
   getRoom(@Param('roomId') roomId: string, @Headers() headers: Record<string, string>) {
     return this.service.getRoom({ roomId, userId: headers['x-user-id'] ?? '' });
   }
@@ -226,6 +230,7 @@ export class ChatController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true, notFound: true })
+  @TraceMethod()
   getMessages(
     @Param('roomId') roomId: string,
     @Query('page') page: number,
@@ -268,6 +273,7 @@ export class ChatController {
     forbidden: true,
     notFound: true,
   })
+  @TraceMethod()
   sendMessage(
     @Param('roomId') roomId: string,
     @Body() body: SendMessageDto,

@@ -1,6 +1,7 @@
 import { Controller, Get, Headers, Inject } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import { DashboardService } from './dashboard.service';
@@ -31,6 +32,7 @@ export class DashboardController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   getContractorDashboard(@Headers() headers: Record<string, string>) {
     const userId = headers['x-user-id'] ?? '';
     return this.service.getContractorDashboard({ userId, headers });
@@ -57,6 +59,7 @@ export class DashboardController {
     },
   })
   @ApiAlternativeErrorResponses({ unauthorized: true, forbidden: true })
+  @TraceMethod()
   getProviderDashboard(@Headers() headers: Record<string, string>) {
     const userId = headers['x-user-id'] ?? '';
     return this.service.getProviderDashboard({ userId, headers });

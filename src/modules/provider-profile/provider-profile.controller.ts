@@ -1,6 +1,7 @@
 import { Controller, Get, Headers, Inject, Param } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import { ProviderProfileService } from './provider-profile.service';
@@ -80,6 +81,7 @@ export class ProviderProfileController {
     },
   })
   @ApiAlternativeErrorResponses({ notFound: true })
+  @TraceMethod()
   getProfile(@Param('id') id: string, @Headers() headers: Record<string, string>) {
     return this.service.getProfile({ providerId: id, headers });
   }

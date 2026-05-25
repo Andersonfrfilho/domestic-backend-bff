@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { AUTH_ERROR_CONFIGS } from '@modules/error/configs/auth-error.config';
 
@@ -24,6 +25,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'E-mail de recuperação disparado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  @TraceMethod()
   async forgotPassword(@Body() body: ForgotPasswordRequestDto): Promise<void> {
     await this.authService.forgotPassword(body.email);
   }
@@ -32,6 +34,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Obter versão atual dos termos' })
   @ApiResponse({ status: 200, description: 'Versão atual dos termos.' })
+  @TraceMethod()
   async getCurrentTerms() {
     return this.termsService.getCurrentVersion();
   }
@@ -40,6 +43,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Listar todas as versões dos termos' })
   @ApiResponse({ status: 200, description: 'Lista de versões dos termos.' })
+  @TraceMethod()
   async listTermsVersions() {
     return this.termsService.listVersions();
   }
@@ -48,6 +52,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verificar se há termos pendentes' })
   @ApiResponse({ status: 200, description: 'Status de pendência dos termos.' })
+  @TraceMethod()
   async checkPendingTerms(@Body() body: { userId: string }) {
     return this.termsService.checkPending(body.userId);
   }
@@ -56,6 +61,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aceitar termos de uso' })
   @ApiResponse({ status: 200, description: 'Termos aceitos com sucesso.' })
+  @TraceMethod()
   async acceptTerms(@Body() body: { userId: string; termsVersionId?: string }) {
     return this.termsService.acceptTerms(body.userId, body.termsVersionId);
   }
@@ -65,6 +71,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Obter status de verificação do usuário' })
   @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
   @ApiResponse({ status: 200, description: 'Status de verificação do usuário.' })
+  @TraceMethod()
   async getVerificationStatus(@Headers('authorization') authorization: string) {
     return this.authService.getVerificationStatus(this.extractKeycloakId(authorization));
   }
@@ -74,6 +81,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Obter status da conta do usuário' })
   @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
   @ApiResponse({ status: 200, description: 'Status da conta do usuário.' })
+  @TraceMethod()
   async getAccountStatus(@Headers('authorization') authorization: string) {
     return this.authService.getAccountStatus(this.extractKeycloakId(authorization));
   }
@@ -83,6 +91,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Listar documentos do usuário' })
   @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
   @ApiResponse({ status: 200, description: 'Lista de documentos do usuário.' })
+  @TraceMethod()
   async getDocuments(@Headers('authorization') authorization: string) {
     return this.authService.getDocuments(this.extractKeycloakId(authorization));
   }

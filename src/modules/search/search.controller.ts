@@ -1,6 +1,7 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { ApiAlternativeErrorResponses } from '@modules/shared/docs/swagger/swagger-error-responses.decorator';
 
 import { SearchRequestDto } from './dtos/search-request.dto';
@@ -129,6 +130,7 @@ export class SearchController {
     },
   })
   @ApiAlternativeErrorResponses({ badRequest: true })
+  @TraceMethod()
   search(@Query() query: SearchRequestDto) {
     return this.service.search(query);
   }
