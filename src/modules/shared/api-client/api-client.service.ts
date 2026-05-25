@@ -1,9 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
-
 import { LOGGER_PROVIDER } from '@adatechnology/logger';
+import { Inject, Injectable } from '@nestjs/common';
+import { context, propagation } from '@opentelemetry/api';
+
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { getRequestId } from '@modules/shared/request-context/request-context';
+
 import type {
   ApiClientGetParams,
   ApiClientPostParams,
@@ -27,6 +29,8 @@ export class ApiClientService {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
     const requestId = getRequestId();
     if (requestId) headers['X-Request-Id'] = requestId;
+    // Propaga W3C traceparent/tracestate para o API — conecta spans no Jaeger
+    propagation.inject(context.active(), headers);
     return headers;
   }
 
@@ -62,7 +66,9 @@ export class ApiClientService {
           message: `API GET ${path} returned ${response.status}`,
           context: 'ApiClientService.get',
         });
-        throw AppErrorFactory.internalServer({ message: `API error ${response.status} on GET ${path}` });
+        throw AppErrorFactory.internalServer({
+          message: `API error ${response.status} on GET ${path}`,
+        });
       }
 
       return this.parseResponse<T>(response);
@@ -89,7 +95,9 @@ export class ApiClientService {
           message: `API POST ${path} returned ${response.status}`,
           context: 'ApiClientService.post',
         });
-        throw AppErrorFactory.internalServer({ message: `API error ${response.status} on POST ${path}` });
+        throw AppErrorFactory.internalServer({
+          message: `API error ${response.status} on POST ${path}`,
+        });
       }
 
       return this.parseResponse<T>(response);
@@ -116,7 +124,9 @@ export class ApiClientService {
           message: `API PUT ${path} returned ${response.status}`,
           context: 'ApiClientService.put',
         });
-        throw AppErrorFactory.internalServer({ message: `API error ${response.status} on PUT ${path}` });
+        throw AppErrorFactory.internalServer({
+          message: `API error ${response.status} on PUT ${path}`,
+        });
       }
 
       return this.parseResponse<T>(response);
