@@ -1,9 +1,9 @@
-import { LOGGER_PROVIDER, getContext } from '@adatechnology/nestjs-logger';
+import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { getRequestId } from '@modules/shared/request-context/request-context';
+import { getRequestId, getTraceparent } from '@modules/shared/request-context/request-context';
 
 import type {
   ApiClientGetParams,
@@ -28,11 +28,9 @@ export class ApiClientService {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
     const requestId = getRequestId();
     if (requestId) headers['X-Request-Id'] = requestId;
-    // Propaga W3C traceparent from AsyncLocalStorage — conecta spans no Jaeger
-    const ctx = getContext();
-    if (ctx && (ctx.traceparent as string)) {
-      headers['traceparent'] = ctx.traceparent as string;
-    }
+    // Propaga W3C traceparent from Kong via AsyncLocalStorage — conecta spans no Tempo
+    const traceparent = getTraceparent();
+    if (traceparent) headers['traceparent'] = traceparent;
     return headers;
   }
 

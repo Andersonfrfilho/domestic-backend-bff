@@ -12,14 +12,14 @@ import { swaggerCustomOptions } from '@config/swagger-custom.config';
 import { swaggerConfig } from '@config/swagger.config';
 import { AppErrorFactory } from '@modules/error';
 import { docsFactory } from '@modules/shared/docs/docs.factory';
-// import { CamelCaseResponseInterceptor } from '@modules/shared/interceptors/camel-case-response.interceptor';
+import { requestContext } from '@modules/shared/request-context/request-context';
 
 import * as tsConfig from '../tsconfig.json';
+// import { CamelCaseResponseInterceptor } from '@modules/shared/interceptors/camel-case-response.interceptor';
 
 import { AppModule } from './app.module';
 import { EnvironmentProviderInterface } from './config';
 import { ENVIRONMENT_SERVICE_PROVIDER } from './config/config.token';
-import { requestContext } from '@modules/shared/request-context/request-context';
 
 const compilerOptions = tsConfig.compilerOptions;
 tsConfigPathsRegister({
@@ -33,11 +33,15 @@ async function bootstrap() {
   const maxFileSizeMb = parseInt(process.env.UPLOAD_MAX_FILE_SIZE_MB ?? '10', 10);
   await app.register(multipart, { limits: { fileSize: maxFileSizeMb * 1024 * 1024 } });
 
-  // Propaga X-Request-Id do mobile para downstream via AsyncLocalStorage
-  app.getHttpAdapter().getInstance().addHook('onRequest', (request, _reply, done) => {
-    const requestId = (request.headers['x-request-id'] as string | undefined) ?? undefined;
-    requestContext.run({ requestId }, done);
-  });
+  // Propaga X-Request-Id do mobile e traceparent do Kong para downstream via AsyncLocalStorage
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addHook('onRequest', (request, _reply, done) => {
+      const requestId = (request.headers['x-request-id'] as string | undefined) ?? undefined;
+      const traceparent = (request.headers['traceparent'] as string | undefined) ?? undefined;
+      requestContext.run({ requestId, traceparent }, done);
+    });
 
   // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade
   app.setGlobalPrefix('bff', { exclude: ['health'] });
