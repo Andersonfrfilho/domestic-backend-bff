@@ -1,6 +1,5 @@
-import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
+import { LOGGER_PROVIDER, getContext } from '@adatechnology/nestjs-logger';
 import { Inject, Injectable } from '@nestjs/common';
-import { context, propagation } from '@opentelemetry/api';
 
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
@@ -29,8 +28,11 @@ export class ApiClientService {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
     const requestId = getRequestId();
     if (requestId) headers['X-Request-Id'] = requestId;
-    // Propaga W3C traceparent/tracestate para o API — conecta spans no Jaeger
-    propagation.inject(context.active(), headers);
+    // Propaga W3C traceparent from AsyncLocalStorage — conecta spans no Jaeger
+    const ctx = getContext();
+    if (ctx && (ctx.traceparent as string)) {
+      headers['traceparent'] = ctx.traceparent as string;
+    }
     return headers;
   }
 
