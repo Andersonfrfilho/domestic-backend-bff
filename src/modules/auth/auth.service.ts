@@ -2,166 +2,70 @@ import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
-import { ENVIRONMENT_SERVICE_PROVIDER } from '@config/config.token';
-import type { EnvironmentProviderInterface } from '@config/interfaces/environment.interface';
-import { AppError } from '@modules/error/app.error';
-import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
-export type UserDocumentResponse = {
-  id: string;
-  documentType: string;
-  status: string;
-  uploadedAt: string;
-  verifiedAt?: string;
-  rejectionReason?: string;
-  fileUrl?: string;
-};
-
-export type AccountStatusResponse = {
-  blocked: boolean;
-  status: string;
-  reason: string | null;
-  message: string | null;
-};
+import {
+  type AccountStatusResponse,
+  type ForgotPasswordParams,
+  type SelfUnlockInitiateParams,
+  type SelfUnlockInitiateResult,
+  type SelfUnlockVerifyParams,
+  type SelfUnlockVerifyResult,
+  type UserDocumentResponse,
+  type VerificationStatusResult,
+  type GetCategoriesResult,
+  type CreateProviderServiceParams,
+  type CreateProviderServiceResult,
+  type GetProviderServicesResult,
+  type UpdateProviderServiceParams,
+  type UpdateProviderServiceResult,
+  type DeleteProviderServiceResult,
+  type SetProviderAvailabilityParams,
+  type SetProviderAvailabilityResult,
+  type GetProviderAvailabilityResult,
+  type UpdateProviderAvailabilityParams,
+  type UpdateProviderAvailabilityResult,
+} from './dtos/auth.types';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
-    @Inject(ENVIRONMENT_SERVICE_PROVIDER) private readonly env: EnvironmentProviderInterface,
     @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
   ) {}
 
   @TraceMethod()
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword({ email }: ForgotPasswordParams): Promise<void> {
     try {
-      const adminToken = await this.getAdminToken();
-      const userId = await this.getUserIdByEmail(adminToken, email);
-
-      if (!userId) {
-        throw AppErrorFactory.notFound({
-          message: 'Usuário não encontrado',
-          code: 'USER_NOT_FOUND',
-        });
-      }
-
-      await this.triggerResetPasswordEmail(adminToken, userId);
+      await this.api.post({
+        path: '/v1/auth/forgot-password',
+        body: { email },
+      });
       this.logProvider.info({
         message: `Password reset triggered for user: ${email}`,
         context: 'AuthService.forgotPassword',
       });
     } catch (error) {
       this.logProvider.error({
-        message: `Failed to process forgot password for ${email}: ${error.message}`,
+        message: `Failed to process forgot password for ${email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.forgotPassword',
       });
-      if (error instanceof AppError) throw error;
-      throw AppErrorFactory.internalServer({ message: 'Falha ao processar recuperação de senha' });
+      throw error;
     }
   }
 
-  private async getAdminToken(): Promise<string> {
-    const url = `${this.env.keycloakBaseUrl}/realms/master/protocol/openid-connect/token`;
-    const params = new URLSearchParams();
-    params.append('grant_type', 'password');
-    params.append('client_id', 'admin-cli');
-    params.append('username', this.env.keycloakAdminUser);
-    params.append('password', this.env.keycloakAdminPassword);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params,
-    });
-
-    if (!response.ok) {
-      throw AppErrorFactory.internalServer({ message: 'Failed to obtain Keycloak admin token' });
-    }
-
-    const data = await safeJsonParse<{ access_token: string }>(response);
-    if (!data?.access_token) {
-      throw AppErrorFactory.internalServer({
-        message: 'Keycloak admin token response missing access_token',
-      });
-    }
-    return data.access_token;
-  }
-
-  private async getUserIdByEmail(token: string, email: string): Promise<string | null> {
-    const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users?email=${email}&exact=true`;
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw AppErrorFactory.internalServer({ message: 'Failed to fetch user by email' });
-    }
-
-    const users = await safeJsonParse<{ id: string }[]>(response);
-    return users && users.length > 0 ? users[0].id : null;
-  }
-
-  private async triggerResetPasswordEmail(token: string, userId: string): Promise<void> {
-    const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${userId}/execute-actions-email`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(['UPDATE_PASSWORD']),
-    });
-
-    if (!response.ok) {
-      throw AppErrorFactory.internalServer({ message: 'Failed to trigger reset password email' });
-    }
-  }
-
-  async getVerificationStatus(
-    keycloakId: string,
-  ): Promise<{ emailVerified: boolean; phoneVerified: boolean }> {
+  async getVerificationStatus(keycloakId: string): Promise<VerificationStatusResult> {
     try {
-      const adminToken = await this.getAdminToken();
-      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await this.api.get<VerificationStatusResult>({
+        path: '/v1/users/me/verification-status',
+        headers: { 'X-User-Id': keycloakId },
       });
-
-      if (!response.ok) {
-        this.logProvider.warn({
-          message: `Failed to get user from Keycloak: ${response.status}`,
-          context: 'AuthService.getVerificationStatus',
-        });
-        return { emailVerified: false, phoneVerified: false };
-      }
-
-      const user = await safeJsonParse<{
-        emailVerified: boolean;
-        attributes?: Record<string, string[]>;
-      }>(response);
-
-      const phoneVerified = user?.attributes?.phoneVerified?.[0] === 'true';
-
-      return {
-        emailVerified: user?.emailVerified ?? false,
-        phoneVerified,
-      };
+      return response;
     } catch (error) {
       this.logProvider.error({
-        message: `Error getting verification status: ${error.message}`,
+        message: `Error getting verification status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.getVerificationStatus',
       });
       return { emailVerified: false, phoneVerified: false };
@@ -170,53 +74,18 @@ export class AuthService {
 
   async updateVerificationAttribute(keycloakId: string, type: 'email' | 'phone'): Promise<void> {
     try {
-      const adminToken = await this.getAdminToken();
-      const url = `${this.env.keycloakBaseUrl}/admin/realms/${this.env.keycloakRealm}/users/${keycloakId}`;
-
-      const getResponse = await fetch(url, {
-        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      await this.api.put({
+        path: '/v1/users/me/verification-attribute',
+        body: { type },
+        headers: { 'X-User-Id': keycloakId },
       });
-
-      if (!getResponse.ok) {
-        this.logProvider.warn({
-          message: `Failed to get user from Keycloak for attribute update: ${getResponse.status}`,
-          context: 'AuthService.updateVerificationAttribute',
-        });
-        return;
-      }
-
-      const currentUser = await safeJsonParse<Record<string, any>>(getResponse);
-      if (!currentUser) return;
-
-      const updatedUser =
-        type === 'email'
-          ? { ...currentUser, emailVerified: true }
-          : {
-              ...currentUser,
-              attributes: { ...(currentUser.attributes ?? {}), phoneVerified: ['true'] },
-            };
-
-      const putResponse = await fetch(url, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
-      });
-
-      if (!putResponse.ok) {
-        this.logProvider.warn({
-          message: `Failed to update Keycloak ${type} attribute: ${putResponse.status}`,
-          context: 'AuthService.updateVerificationAttribute',
-        });
-        return;
-      }
-
       this.logProvider.info({
-        message: `Keycloak ${type} verification attribute updated for user: ${keycloakId}`,
+        message: `Verification attribute updated for user: ${keycloakId}`,
         context: 'AuthService.updateVerificationAttribute',
       });
     } catch (error) {
       this.logProvider.error({
-        message: `Error updating Keycloak ${type} attribute: ${error.message}`,
+        message: `Error updating verification attribute: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.updateVerificationAttribute',
       });
     }
@@ -231,7 +100,7 @@ export class AuthService {
       return response;
     } catch (error) {
       this.logProvider.error({
-        message: `Error getting account status: ${error.message}`,
+        message: `Error getting account status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.getAccountStatus',
       });
       return { blocked: false, status: 'UNKNOWN', reason: null, message: null };
@@ -247,10 +116,229 @@ export class AuthService {
       return response.documents || [];
     } catch (error) {
       this.logProvider.error({
-        message: `Error getting documents: ${error.message}`,
+        message: `Error getting documents: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.getDocuments',
       });
       return [];
+    }
+  }
+
+  async initiateSelfUnlock(params: SelfUnlockInitiateParams): Promise<SelfUnlockInitiateResult> {
+    try {
+      const response = await this.api.post<SelfUnlockInitiateResult>({
+        path: `/v1/users/me/account-block/${params.blockId}/self-unlock`,
+        body: {},
+        headers: { 'X-User-Id': params.keycloakId },
+      });
+      this.logProvider.info({
+        message: `Self-unlock initiated for block: ${params.blockId}`,
+        context: 'AuthService.initiateSelfUnlock',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.warn({
+        message: `Failed to initiate self-unlock for block ${params.blockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.initiateSelfUnlock',
+      });
+      throw error;
+    }
+  }
+
+  async verifySelfUnlock(params: SelfUnlockVerifyParams): Promise<SelfUnlockVerifyResult> {
+    try {
+      const response = await this.api.post<SelfUnlockVerifyResult>({
+        path: `/v1/users/me/account-block/${params.blockId}/self-unlock/verify`,
+        body: { code: params.code },
+        headers: { 'X-User-Id': params.keycloakId },
+      });
+      this.logProvider.info({
+        message: `Self-unlock verification result for block ${params.blockId}: success=${response.success}, blockResolved=${response.blockResolved}`,
+        context: 'AuthService.verifySelfUnlock',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.warn({
+        message: `Failed to verify self-unlock code for block ${params.blockId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.verifySelfUnlock',
+      });
+      throw error;
+    }
+  }
+
+  // Provider Profile Methods
+
+  @TraceMethod()
+  async getCategories(): Promise<GetCategoriesResult> {
+    try {
+      const response = await this.api.get<GetCategoriesResult>({
+        path: '/v1/auth/categories',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting categories: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getCategories',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async createProviderService(
+    params: CreateProviderServiceParams,
+    keycloakId: string,
+  ): Promise<CreateProviderServiceResult> {
+    try {
+      const response = await this.api.post<CreateProviderServiceResult>({
+        path: '/v1/auth/providers/me/services',
+        body: params,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider service created: ${response.data.id}`,
+        context: 'AuthService.createProviderService',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error creating provider service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.createProviderService',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getProviderServices(keycloakId: string): Promise<GetProviderServicesResult> {
+    try {
+      const response = await this.api.get<GetProviderServicesResult>({
+        path: '/v1/auth/providers/me/services',
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting provider services: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getProviderServices',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async updateProviderService(
+    serviceId: string,
+    params: UpdateProviderServiceParams,
+    keycloakId: string,
+  ): Promise<UpdateProviderServiceResult> {
+    try {
+      const response = await this.api.put<UpdateProviderServiceResult>({
+        path: `/v1/auth/providers/me/services/${serviceId}`,
+        body: params,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider service updated: ${serviceId}`,
+        context: 'AuthService.updateProviderService',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error updating provider service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.updateProviderService',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async deleteProviderService(
+    serviceId: string,
+    keycloakId: string,
+  ): Promise<DeleteProviderServiceResult> {
+    try {
+      const response = await this.api.delete<DeleteProviderServiceResult>({
+        path: `/v1/auth/providers/me/services/${serviceId}`,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider service deleted: ${serviceId}`,
+        context: 'AuthService.deleteProviderService',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error deleting provider service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.deleteProviderService',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async setProviderAvailability(
+    params: SetProviderAvailabilityParams,
+    keycloakId: string,
+  ): Promise<SetProviderAvailabilityResult> {
+    try {
+      const response = await this.api.post<SetProviderAvailabilityResult>({
+        path: '/v1/auth/providers/me/availability',
+        body: params,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider availability set for day ${params.dayOfWeek}`,
+        context: 'AuthService.setProviderAvailability',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error setting provider availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.setProviderAvailability',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getProviderAvailability(keycloakId: string): Promise<GetProviderAvailabilityResult> {
+    try {
+      const response = await this.api.get<GetProviderAvailabilityResult>({
+        path: '/v1/auth/providers/me/availability',
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting provider availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getProviderAvailability',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async updateProviderAvailability(
+    params: UpdateProviderAvailabilityParams,
+    keycloakId: string,
+  ): Promise<UpdateProviderAvailabilityResult> {
+    try {
+      const response = await this.api.put<UpdateProviderAvailabilityResult>({
+        path: `/v1/auth/providers/me/availability/${params.dayOfWeek}`,
+        body: { startTime: params.startTime, endTime: params.endTime },
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider availability updated for day ${params.dayOfWeek}`,
+        context: 'AuthService.updateProviderAvailability',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error updating provider availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.updateProviderAvailability',
+      });
+      throw error;
     }
   }
 }

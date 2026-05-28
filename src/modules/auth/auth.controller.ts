@@ -1,12 +1,30 @@
-import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
+import { ApiHeader, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { AUTH_ERROR_CONFIGS } from '@modules/error/configs/auth-error.config';
 
 import { AuthService } from './auth.service';
+import type {
+  SelfUnlockInitiateResult,
+  SelfUnlockVerifyResult,
+  CreateProviderServiceParams,
+  UpdateProviderServiceParams,
+} from './dtos/auth.types';
 import { ForgotPasswordRequestDto } from './dtos/forgot-password-request.dto';
+import { SelfUnlockVerifyRequestDto } from './dtos/self-unlock-verify-request.dto';
 import { TermsService } from './terms.service';
 
 @ApiTags('Auth')
@@ -27,7 +45,7 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
   @TraceMethod()
   async forgotPassword(@Body() body: ForgotPasswordRequestDto): Promise<void> {
-    await this.authService.forgotPassword(body.email);
+    await this.authService.forgotPassword({ email: body.email });
   }
 
   @Get('terms/current')
@@ -94,6 +112,181 @@ export class AuthController {
   @TraceMethod()
   async getDocuments(@Headers('authorization') authorization: string) {
     return this.authService.getDocuments(this.extractKeycloakId(authorization));
+  }
+
+  @Post('account-block/:blockId/self-unlock')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Iniciar auto-desbloqueio de conta' })
+  @ApiParam({ name: 'blockId', description: 'ID do bloqueio de conta' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de desbloqueio enviado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Código enviado para seu e-mail' },
+        destination: { type: 'string', example: 'a***@gmail.com' },
+        expiresIn: { type: 'number', example: 300 },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Bloqueio não encontrado' })
+  @ApiResponse({ status: 400, description: 'Bloqueio não é auto-desbloqueável' })
+  @TraceMethod()
+  async initiateSelfUnlock(
+    @Param('blockId') blockId: string,
+    @Headers('authorization') authorization: string,
+  ): Promise<SelfUnlockInitiateResult> {
+    return this.authService.initiateSelfUnlock({
+      blockId,
+      keycloakId: this.extractKeycloakId(authorization),
+    });
+  }
+
+  @Post('account-block/:blockId/self-unlock/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar código de auto-desbloqueio' })
+  @ApiParam({ name: 'blockId', description: 'ID do bloqueio de conta' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado da verificação do código',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        blockResolved: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Conta desbloqueada com sucesso' },
+        canRetryAt: { type: 'string', nullable: true, example: null },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Código expirado ou tentativas esgotadas' })
+  @TraceMethod()
+  async verifySelfUnlock(
+    @Param('blockId') blockId: string,
+    @Body() body: SelfUnlockVerifyRequestDto,
+    @Headers('authorization') authorization: string,
+  ): Promise<SelfUnlockVerifyResult> {
+    return this.authService.verifySelfUnlock({
+      blockId,
+      code: body.code,
+      keycloakId: this.extractKeycloakId(authorization),
+    });
+  }
+
+  // Provider Profile Endpoints
+
+  @Get('categories')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar categorias de serviços' })
+  @ApiResponse({ status: 200, description: 'Lista de categorias.' })
+  @TraceMethod()
+  async getCategories() {
+    return this.authService.getCategories();
+  }
+
+  @Post('providers/me/services')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar serviço prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 201, description: 'Serviço criado com sucesso.' })
+  @TraceMethod()
+  async createProviderService(
+    @Body() body: CreateProviderServiceParams,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.createProviderService(body, this.extractKeycloakId(authorization));
+  }
+
+  @Get('providers/me/services')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar serviços do prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Lista de serviços.' })
+  @TraceMethod()
+  async getProviderServices(@Headers('authorization') authorization: string) {
+    return this.authService.getProviderServices(this.extractKeycloakId(authorization));
+  }
+
+  @Put('providers/me/services/:serviceId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar serviço prestador' })
+  @ApiParam({ name: 'serviceId', description: 'ID do serviço' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Serviço atualizado.' })
+  @TraceMethod()
+  async updateProviderService(
+    @Param('serviceId') serviceId: string,
+    @Body() body: UpdateProviderServiceParams,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.updateProviderService(
+      serviceId,
+      body,
+      this.extractKeycloakId(authorization),
+    );
+  }
+
+  @Delete('providers/me/services/:serviceId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Deletar serviço prestador' })
+  @ApiParam({ name: 'serviceId', description: 'ID do serviço' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Serviço deletado.' })
+  @TraceMethod()
+  async deleteProviderService(
+    @Param('serviceId') serviceId: string,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.deleteProviderService(serviceId, this.extractKeycloakId(authorization));
+  }
+
+  @Post('providers/me/availability')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Definir disponibilidade do prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 201, description: 'Disponibilidade definida.' })
+  @TraceMethod()
+  async setProviderAvailability(
+    @Body() body: { dayOfWeek: number; startTime: string; endTime: string },
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.setProviderAvailability(body, this.extractKeycloakId(authorization));
+  }
+
+  @Get('providers/me/availability')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar disponibilidade do prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Lista de horários.' })
+  @TraceMethod()
+  async getProviderAvailability(@Headers('authorization') authorization: string) {
+    return this.authService.getProviderAvailability(this.extractKeycloakId(authorization));
+  }
+
+  @Put('providers/me/availability/:dayOfWeek')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar disponibilidade do prestador' })
+  @ApiParam({ name: 'dayOfWeek', description: 'Dia da semana (0-6)' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Disponibilidade atualizada.' })
+  @TraceMethod()
+  async updateProviderAvailability(
+    @Param('dayOfWeek') dayOfWeek: string,
+    @Body() body: { startTime: string; endTime: string },
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.updateProviderAvailability(
+      {
+        dayOfWeek: Number(dayOfWeek),
+        startTime: body.startTime,
+        endTime: body.endTime,
+      },
+      this.extractKeycloakId(authorization),
+    );
   }
 
   private extractKeycloakId(authorization: string | undefined): string {

@@ -134,4 +134,32 @@ export class ApiClientService {
       clearTimeout(timeout);
     }
   }
+
+  async delete<T>({ path, headers }: ApiClientGetParams): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: this.buildHeaders(headers),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        this.logProvider.warn({
+          message: `API DELETE ${path} returned ${response.status}`,
+          context: 'ApiClientService.delete',
+        });
+        throw AppErrorFactory.internalServer({
+          message: `API error ${response.status} on DELETE ${path}`,
+        });
+      }
+
+      return this.parseResponse<T>(response);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
 }
