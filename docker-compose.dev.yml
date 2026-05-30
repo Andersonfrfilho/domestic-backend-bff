@@ -1,0 +1,7 @@
+# BFF em modo dev — roda o processo localmente (npm run start:dev).
+# Apenas a rede compartilhada é declarada aqui; toda a infra vem do domestic-backend-api.
+# Uso: make dev   (após make dev-infra no domestic-backend-api)
+networks:
+  default:
+    name: domestic_network
+    external: true
