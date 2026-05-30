@@ -5,6 +5,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { AUTH_ERROR_CONFIGS } from '@modules/error/configs/auth-error.config';
+import { FieldVerificationService } from '@modules/onboarding/field-verification.service';
 
 import { AccountService } from './account.service';
 
@@ -12,6 +13,12 @@ class UpdateNameDto {
   @IsString()
   @IsNotEmpty()
   fullName: string;
+}
+
+class CheckContactDto {
+  @IsString()
+  @IsNotEmpty()
+  contact: string;
 }
 
 class InitiateContactChangeDto {
@@ -33,7 +40,10 @@ class ConfirmContactChangeDto {
 @ApiTags('Account')
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly fieldVerificationService: FieldVerificationService,
+  ) {}
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
@@ -51,13 +61,30 @@ export class AccountController {
   @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
   @ApiResponse({ status: 200, description: 'Nome atualizado.' })
   @TraceMethod()
-  async updateName(
-    @Headers('authorization') authorization: string,
-    @Body() body: UpdateNameDto,
-  ) {
+  async updateName(@Headers('authorization') authorization: string, @Body() body: UpdateNameDto) {
     return this.accountService.updateName(this.extractKeycloakId(authorization), {
       fullName: body.fullName,
     });
+  }
+
+  @Post('me/email/check')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar se e-mail já está em uso' })
+  @ApiResponse({ status: 200, description: 'E-mail disponível.' })
+  @ApiResponse({ status: 409, description: 'E-mail já está em uso.' })
+  @TraceMethod()
+  async checkEmail(@Body() body: CheckContactDto) {
+    return this.fieldVerificationService.verifyEmail(body.contact);
+  }
+
+  @Post('me/phone/check')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar se telefone já está em uso' })
+  @ApiResponse({ status: 200, description: 'Telefone disponível.' })
+  @ApiResponse({ status: 409, description: 'Telefone já está em uso.' })
+  @TraceMethod()
+  async checkPhone(@Body() body: CheckContactDto) {
+    return this.fieldVerificationService.verifyPhone(body.contact);
   }
 
   @Post('me/email/change')
