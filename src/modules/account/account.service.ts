@@ -125,10 +125,17 @@ export class AccountService {
       });
 
       if (oldPrimary) {
-        await this.api.delete({
-          path: `/v1/users/me/emails/${oldPrimary.id}`,
-          headers: { 'X-User-Id': keycloakId },
-        });
+        try {
+          await this.api.delete({
+            path: `/v1/users/me/emails/${oldPrimary.id}`,
+            headers: { 'X-User-Id': keycloakId },
+          });
+        } catch (deleteError) {
+          this.logger.warn({
+            message: `Could not delete old primary email ${oldPrimary.id} — ignoring: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`,
+            context: `${this.logContext}.confirmEmailChange`,
+          });
+        }
       }
 
       this.logger.info({
@@ -208,10 +215,17 @@ export class AccountService {
       });
 
       if (oldPrimary) {
-        await this.api.delete({
-          path: `/v1/users/me/phones/${oldPrimary.id}`,
-          headers: { 'X-User-Id': keycloakId },
-        });
+        try {
+          await this.api.delete({
+            path: `/v1/users/me/phones/${oldPrimary.id}`,
+            headers: { 'X-User-Id': keycloakId },
+          });
+        } catch (deleteError) {
+          this.logger.warn({
+            message: `Could not delete old primary phone ${oldPrimary.id} — ignoring: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`,
+            context: `${this.logContext}.confirmPhoneChange`,
+          });
+        }
       }
 
       this.logger.info({
