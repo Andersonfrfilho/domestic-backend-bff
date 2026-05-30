@@ -41,7 +41,8 @@ async function bootstrap() {
       const requestId = (request.headers['x-request-id'] as string | undefined) ?? undefined;
       const traceparent = (request.headers['traceparent'] as string | undefined) ?? undefined;
       const authorization = request.headers['authorization'] ?? undefined;
-      requestContext.run({ requestId, traceparent, authorization }, done);
+      const xAccessToken = (request.headers['x-access-token'] as string | undefined) ?? undefined;
+      requestContext.run({ requestId, traceparent, authorization, xAccessToken }, done);
     });
 
   // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade

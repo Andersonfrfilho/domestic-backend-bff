@@ -4,6 +4,7 @@ type RequestContext = {
   requestId: string | undefined;
   traceparent: string | undefined;
   authorization: string | undefined;
+  xAccessToken: string | undefined;
 };
 
 export const requestContext = new AsyncLocalStorage<RequestContext>();
@@ -18,4 +19,8 @@ export function getTraceparent(): string | undefined {
 
 export function getAuthorization(): string | undefined {
   return requestContext.getStore()?.authorization;
+}
+
+export function getXAccessToken(): string | undefined {
+  return requestContext.getStore()?.xAccessToken;
 }

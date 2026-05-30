@@ -7,6 +7,7 @@ import {
   getAuthorization,
   getRequestId,
   getTraceparent,
+  getXAccessToken,
 } from '@modules/shared/request-context/request-context';
 
 import type {
@@ -35,9 +36,17 @@ export class ApiClientService {
     // Propaga W3C traceparent from Kong via AsyncLocalStorage — conecta spans no Tempo
     const traceparent = getTraceparent();
     if (traceparent) headers['traceparent'] = traceparent;
-    // Propaga Authorization do cliente para a API validar o token
-    const authorization = getAuthorization();
-    if (authorization) headers['Authorization'] = authorization;
+    // Kong injeta X-Access-Token (raw JWT) ou o mobile envia Authorization: Bearer <jwt>.
+    // A API interna espera X-Access-Token (B2C) — apenas presença + JWT decodificável.
+    const xAccessToken = getXAccessToken();
+    if (xAccessToken) {
+      headers['X-Access-Token'] = xAccessToken;
+    } else {
+      const authorization = getAuthorization();
+      if (authorization) {
+        headers['X-Access-Token'] = authorization.replace(/^bearer\s+/i, '');
+      }
+    }
     return headers;
   }
 
