@@ -106,8 +106,12 @@ rebuild: setup-env ## Reconstroi a imagem do BFF e sobe
 
 # ─── Desenvolvimento e Testes ──────────────────────────────────────────────
 
-dev: setup-env ## Roda o BFF localmente (requer infra no ar)
-	npm run start:dev
+seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) para dev local
+	@echo "🌱 Rodando seed MongoDB..."
+	MONGO_URI=$${MONGO_URI:-mongodb://localhost:27017/backend_database_mongo} npm run seed:mongodb
+
+dev: setup-env ## Roda o BFF localmente com logs (requer make dev-infra no domestic-backend-api)
+	./scripts/dev-log.sh bff "npm run start:dev"
 
 test-unit: ## Roda testes unitários
 	npm run test:unit
