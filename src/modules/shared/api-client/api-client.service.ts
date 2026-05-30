@@ -50,6 +50,14 @@ export class ApiClientService {
     return headers;
   }
 
+  private async readBody(response: Response): Promise<string> {
+    try {
+      return await response.text();
+    } catch {
+      return '';
+    }
+  }
+
   private async parseResponse<T>(response: Response): Promise<T> {
     const text = await response.text();
     if (!text || text.trim().length === 0) {
@@ -78,9 +86,11 @@ export class ApiClientService {
       });
 
       if (!response.ok) {
+        const errorBody = await this.readBody(response);
         this.logProvider.warn({
           message: `API GET ${path} returned ${response.status}`,
           context: 'ApiClientService.get',
+          meta: { status: response.status, body: errorBody.slice(0, 500) },
         });
         throw AppErrorFactory.internalServer({
           message: `API error ${response.status} on GET ${path}`,
@@ -107,9 +117,11 @@ export class ApiClientService {
       });
 
       if (!response.ok) {
+        const errorBody = await this.readBody(response);
         this.logProvider.warn({
           message: `API POST ${path} returned ${response.status}`,
           context: 'ApiClientService.post',
+          meta: { status: response.status, body: errorBody.slice(0, 500) },
         });
         throw AppErrorFactory.internalServer({
           message: `API error ${response.status} on POST ${path}`,
@@ -136,9 +148,11 @@ export class ApiClientService {
       });
 
       if (!response.ok) {
+        const errorBody = await this.readBody(response);
         this.logProvider.warn({
           message: `API PUT ${path} returned ${response.status}`,
           context: 'ApiClientService.put',
+          meta: { status: response.status, body: errorBody.slice(0, 500) },
         });
         throw AppErrorFactory.internalServer({
           message: `API error ${response.status} on PUT ${path}`,
@@ -164,9 +178,11 @@ export class ApiClientService {
       });
 
       if (!response.ok) {
+        const errorBody = await this.readBody(response);
         this.logProvider.warn({
           message: `API DELETE ${path} returned ${response.status}`,
           context: 'ApiClientService.delete',
+          meta: { status: response.status, body: errorBody.slice(0, 500) },
         });
         throw AppErrorFactory.internalServer({
           message: `API error ${response.status} on DELETE ${path}`,

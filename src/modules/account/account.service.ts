@@ -105,13 +105,6 @@ export class AccountService {
     params: ConfirmContactChangeParams,
   ): Promise<ConfirmContactChangeResult> {
     try {
-      const emails = await this.api.get<Array<{ id: string; isPrimary: boolean }>>({
-        path: '/v1/users/me/emails',
-        headers: { 'X-User-Id': keycloakId },
-      });
-
-      const oldPrimary = emails.find((e) => e.isPrimary && e.id !== params.contactId);
-
       await this.api.post({
         path: `/v1/users/me/emails/${params.contactId}/verify`,
         body: { code: params.code },
@@ -123,20 +116,6 @@ export class AccountService {
         body: {},
         headers: { 'X-User-Id': keycloakId },
       });
-
-      if (oldPrimary) {
-        try {
-          await this.api.delete({
-            path: `/v1/users/me/emails/${oldPrimary.id}`,
-            headers: { 'X-User-Id': keycloakId },
-          });
-        } catch (deleteError) {
-          this.logger.warn({
-            message: `Could not delete old primary email ${oldPrimary.id} — ignoring: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`,
-            context: `${this.logContext}.confirmEmailChange`,
-          });
-        }
-      }
 
       this.logger.info({
         message: `Email change confirmed for ${keycloakId}, contactId: ${params.contactId}`,
