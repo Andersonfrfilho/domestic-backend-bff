@@ -40,7 +40,8 @@ async function bootstrap() {
     .addHook('onRequest', (request, _reply, done) => {
       const requestId = (request.headers['x-request-id'] as string | undefined) ?? undefined;
       const traceparent = (request.headers['traceparent'] as string | undefined) ?? undefined;
-      requestContext.run({ requestId, traceparent }, done);
+      const authorization = request.headers['authorization'] ?? undefined;
+      requestContext.run({ requestId, traceparent, authorization }, done);
     });
 
   // Kong adiciona /bff externamente; mantemos o prefixo interno para compatibilidade

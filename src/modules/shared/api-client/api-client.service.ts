@@ -3,7 +3,11 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
-import { getRequestId, getTraceparent } from '@modules/shared/request-context/request-context';
+import {
+  getAuthorization,
+  getRequestId,
+  getTraceparent,
+} from '@modules/shared/request-context/request-context';
 
 import type {
   ApiClientGetParams,
@@ -31,6 +35,9 @@ export class ApiClientService {
     // Propaga W3C traceparent from Kong via AsyncLocalStorage — conecta spans no Tempo
     const traceparent = getTraceparent();
     if (traceparent) headers['traceparent'] = traceparent;
+    // Propaga Authorization do cliente para a API validar o token
+    const authorization = getAuthorization();
+    if (authorization) headers['Authorization'] = authorization;
     return headers;
   }
 
