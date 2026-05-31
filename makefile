@@ -108,7 +108,7 @@ rebuild: setup-env ## Reconstroi a imagem do BFF e sobe
 
 seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) para dev local
 	@echo "🌱 Rodando seed MongoDB..."
-	MONGO_URI=$${MONGO_URI:-mongodb://localhost:27017/backend_database_mongo} npm run seed:mongodb
+	MONGO_URI=mongodb://localhost:27017/backend_database_mongo npm run seed:mongodb
 
 dev-app-up: setup-env ## Sobe o BFF em Docker com hot-reload (requer make dev-infra no domestic-backend-api)
 	@echo "🚀 Subindo BFF em Docker..."
