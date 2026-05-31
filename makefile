@@ -110,6 +110,19 @@ seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) para de
 	@echo "🌱 Rodando seed MongoDB..."
 	MONGO_URI=$${MONGO_URI:-mongodb://localhost:27017/backend_database_mongo} npm run seed:mongodb
 
+dev-app-up: setup-env ## Sobe o BFF em Docker com hot-reload (requer make dev-infra no domestic-backend-api)
+	@echo "🚀 Subindo BFF em Docker..."
+	docker-compose -p domestic -f docker-compose.dev.yml up -d --build
+	@echo "✅ BFF → http://localhost:3335"
+
+dev-app-down: ## Para o container do BFF
+	docker-compose -p domestic -f docker-compose.dev.yml down
+
+dev-app-logs: ## Tail dos logs do BFF
+	docker logs -f domestic_bff
+
+dev-all: seed-dev dev-app-up ## Seed MongoDB + sobe BFF em Docker
+
 dev: setup-env ## Roda o BFF localmente com logs (requer make dev-infra no domestic-backend-api)
 	./scripts/dev-log.sh bff "npm run start:dev"
 

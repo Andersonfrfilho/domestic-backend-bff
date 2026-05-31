@@ -1,6 +1,40 @@
-# BFF em modo dev — roda o processo localmente (npm run start:dev).
-# Apenas a rede compartilhada é declarada aqui; toda a infra vem do domestic-backend-api.
-# Uso: make dev   (após make dev-infra no domestic-backend-api)
+# BFF em container Docker — hot-reload via volume mount.
+# Requer infra no ar: make dev-infra (no domestic-backend-api)
+# Uso: make dev-all
+services:
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: domestic_bff
+    environment:
+      NODE_ENV: development
+      PORT: 3335
+      MONGO_URI: mongodb://domestic_database_mongo:27017/backend_database_mongo
+      CACHE_REDIS_HOST: domestic_cache_redis
+      CACHE_REDIS_PORT: 6379
+      API_BASE_URL: http://domestic_api:3333
+      KEYCLOAK_BASE_URL: http://domestic_keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-domestic-backend}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-domestic-backend-bff}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-backend-bff-client-secret}
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - '3335:3335'
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+      - bff_logs:/app/logs
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+
+volumes:
+  bff_logs:
+
 networks:
   default:
     name: domestic_network
