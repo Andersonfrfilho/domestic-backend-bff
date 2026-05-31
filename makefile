@@ -106,9 +106,15 @@ rebuild: setup-env ## Reconstroi a imagem do BFF e sobe
 
 # ─── Desenvolvimento e Testes ──────────────────────────────────────────────
 
-seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) para dev local
+seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) via Docker na rede domestic
 	@echo "🌱 Rodando seed MongoDB..."
-	MONGO_URI=mongodb://localhost:27017/backend_database_mongo npm run seed:mongodb
+	docker run --rm \
+		--network domestic_network \
+		-v $(PWD):/app \
+		-w /app \
+		-e MONGO_URI=mongodb://domestic_database_mongo:27017/backend_database_mongo \
+		node:20-alpine \
+		node scripts/seed-mongodb.mjs
 
 dev-app-up: setup-env ## Sobe o BFF em Docker com hot-reload (requer make dev-infra no domestic-backend-api)
 	@echo "🚀 Subindo BFF em Docker..."
