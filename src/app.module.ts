@@ -20,6 +20,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { CompanyModule } from './modules/company/company.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DeviceTokensModule } from './modules/device-tokens/device-tokens.module';
 import { ErrorModule } from './modules/error/error.module';
 import { HomeModule } from './modules/home/home.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
@@ -27,8 +28,10 @@ import { NavigationModule } from './modules/navigation/navigation.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { ProviderProfileModule } from './modules/provider-profile/provider-profile.module';
+import { ReviewModule } from './modules/review/review.module';
 import { ScreensModule } from './modules/screens/screens.module';
 import { SearchModule } from './modules/search/search.module';
+import { ServiceRequestsModule } from './modules/service-requests/service-requests.module';
 import { ApiClientModule } from './modules/shared/api-client/api-client.module';
 import { BffCacheModule } from './modules/shared/cache/bff-cache.module';
 import { BffMongoModule } from './modules/shared/mongo/mongo.module';
@@ -82,6 +85,9 @@ tsConfigPathsRegister({
     OnboardingModule,
     CompanyModule,
     AddressModule,
+    ServiceRequestsModule,
+    ReviewModule,
+    DeviceTokensModule,
   ],
 })
 export class AppModule implements NestModule {
