@@ -7,6 +7,10 @@ import { API_CLIENT_SERVICE } from '@modules/shared/api-client/api-client.token'
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 
 import {
+  type LoginParams,
+  type LoginResult,
+  type RefreshTokenParams,
+  type LogoutParams,
   type AccountStatusResponse,
   type ForgotPasswordParams,
   type SelfUnlockInitiateParams,
@@ -16,6 +20,11 @@ import {
   type UserDocumentResponse,
   type VerificationStatusResult,
   type GetCategoriesResult,
+  type GetServicesResult,
+  type CreateCategoryParams,
+  type CreateCategoryResult,
+  type CreateServiceCatalogParams,
+  type CreateServiceCatalogResult,
   type CreateProviderServiceParams,
   type CreateProviderServiceResult,
   type GetProviderServicesResult,
@@ -27,6 +36,11 @@ import {
   type GetProviderAvailabilityResult,
   type UpdateProviderAvailabilityParams,
   type UpdateProviderAvailabilityResult,
+  type DeleteProviderAvailabilityResult,
+  type GetPaymentMethodTypesResult,
+  type GetProviderPaymentMethodsResult,
+  type SetProviderPaymentMethodsParams,
+  type CheckPixKeyAvailabilityResult,
 } from './dtos/auth.types';
 
 @Injectable()
@@ -35,6 +49,63 @@ export class AuthService {
     @Inject(LOGGER_PROVIDER) private readonly logProvider: LogProviderInterface,
     @Inject(API_CLIENT_SERVICE) private readonly api: ApiClientService,
   ) {}
+
+  @TraceMethod()
+  async login({ username, password }: LoginParams): Promise<LoginResult> {
+    try {
+      const response = await this.api.post<LoginResult>({
+        path: '/v1/auth/token',
+        body: { username, password },
+      });
+      this.logProvider.info({
+        message: `User logged in: ${username}`,
+        context: 'AuthService.login',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Login failed for ${username}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.login',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async refreshToken({ refreshToken }: RefreshTokenParams): Promise<LoginResult> {
+    try {
+      const response = await this.api.post<LoginResult>({
+        path: '/v1/auth/token',
+        body: { grantType: 'refresh_token', refreshToken },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.refreshToken',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async logout({ refreshToken }: LogoutParams): Promise<void> {
+    try {
+      await this.api.post({
+        path: '/v1/auth/logout',
+        body: { refreshToken },
+      });
+      this.logProvider.info({
+        message: 'User logged out',
+        context: 'AuthService.logout',
+      });
+    } catch (error) {
+      this.logProvider.warn({
+        message: `Logout failed (non-fatal): ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.logout',
+      });
+    }
+  }
 
   @TraceMethod()
   async forgotPassword({ email }: ForgotPasswordParams): Promise<void> {
@@ -109,11 +180,11 @@ export class AuthService {
 
   async getDocuments(keycloakId: string): Promise<UserDocumentResponse[]> {
     try {
-      const response = await this.api.get<{ documents: UserDocumentResponse[] }>({
+      const response = await this.api.get<UserDocumentResponse[]>({
         path: '/v1/users/me/documents',
         headers: { 'X-User-Id': keycloakId },
       });
-      return response.documents || [];
+      return response || [];
     } catch (error) {
       this.logProvider.error({
         message: `Error getting documents: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -166,6 +237,58 @@ export class AuthService {
   }
 
   // Provider Profile Methods
+
+  @TraceMethod()
+  async createCategory(params: CreateCategoryParams): Promise<CreateCategoryResult> {
+    try {
+      const response = await this.api.post<CreateCategoryResult>({
+        path: '/v1/categories',
+        body: params,
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error creating category: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.createCategory',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async createServiceCatalog(
+    params: CreateServiceCatalogParams,
+  ): Promise<CreateServiceCatalogResult> {
+    try {
+      const response = await this.api.post<CreateServiceCatalogResult>({
+        path: '/v1/services',
+        body: params,
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error creating service catalog: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.createServiceCatalog',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getServices(): Promise<GetServicesResult> {
+    try {
+      const response = await this.api.get<GetServicesResult>({
+        path: '/v1/services',
+      });
+      return response ?? { data: [] };
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting services: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getServices',
+      });
+      throw error;
+    }
+  }
 
   @TraceMethod()
   async getCategories(): Promise<GetCategoriesResult> {
@@ -324,12 +447,18 @@ export class AuthService {
   ): Promise<UpdateProviderAvailabilityResult> {
     try {
       const response = await this.api.put<UpdateProviderAvailabilityResult>({
-        path: `/v1/auth/providers/me/availability/${params.dayOfWeek}`,
-        body: { startTime: params.startTime, endTime: params.endTime },
+        path: `/v1/auth/providers/me/availability/${params.id}`,
+        body: {
+          startTime: params.startTime,
+          endTime: params.endTime,
+          ...(params.additionalPercentage !== undefined && {
+            additionalPercentage: params.additionalPercentage,
+          }),
+        },
         headers: { 'X-User-Id': keycloakId },
       });
       this.logProvider.info({
-        message: `Provider availability updated for day ${params.dayOfWeek}`,
+        message: `Provider availability updated for slot ${params.id}`,
         context: 'AuthService.updateProviderAvailability',
       });
       return response;
@@ -337,6 +466,106 @@ export class AuthService {
       this.logProvider.error({
         message: `Error updating provider availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.updateProviderAvailability',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async deleteProviderAvailability(
+    id: string,
+    keycloakId: string,
+  ): Promise<DeleteProviderAvailabilityResult> {
+    try {
+      const response = await this.api.delete<DeleteProviderAvailabilityResult>({
+        path: `/v1/auth/providers/me/availability/${id}`,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: `Provider availability slot deleted: ${id}`,
+        context: 'AuthService.deleteProviderAvailability',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error deleting provider availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.deleteProviderAvailability',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getPaymentMethodTypes(): Promise<GetPaymentMethodTypesResult> {
+    try {
+      return await this.api.get<GetPaymentMethodTypesResult>({
+        path: '/v1/auth/payment-method-types',
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting payment method types: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getPaymentMethodTypes',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getProviderPaymentMethods(keycloakId: string): Promise<GetProviderPaymentMethodsResult> {
+    try {
+      return await this.api.get<GetProviderPaymentMethodsResult>({
+        path: '/v1/auth/providers/me/payment-methods',
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting provider payment methods: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getProviderPaymentMethods',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async setProviderPaymentMethods(
+    params: SetProviderPaymentMethodsParams,
+    keycloakId: string,
+  ): Promise<{ success: boolean }> {
+    try {
+      const response = await this.api.put<{ success: boolean }>({
+        path: '/v1/auth/providers/me/payment-methods',
+        body: params,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      this.logProvider.info({
+        message: 'Provider payment methods updated',
+        context: 'AuthService.setProviderPaymentMethods',
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error setting provider payment methods: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.setProviderPaymentMethods',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async checkPixKeyAvailability(
+    pixKey: string,
+    keycloakId: string,
+  ): Promise<CheckPixKeyAvailabilityResult> {
+    try {
+      const response = await this.api.get<CheckPixKeyAvailabilityResult>({
+        path: `/v1/auth/providers/me/pix-key/check?key=${encodeURIComponent(pixKey)}`,
+        headers: { 'X-User-Id': keycloakId },
+      });
+      return response;
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error checking PIX key availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.checkPixKeyAvailability',
       });
       throw error;
     }

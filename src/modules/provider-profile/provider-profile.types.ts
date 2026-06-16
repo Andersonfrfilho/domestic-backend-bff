@@ -5,6 +5,7 @@ export interface ProviderProfileResponse {
   averageRating: number;
   reviewCount: number;
   isAvailable: boolean;
+  avatarUrl: string | null;
   verificationStatus: string;
   services: Array<{
     id: string;
@@ -14,6 +15,13 @@ export interface ProviderProfileResponse {
     priceType: string;
   }>;
   workLocations: Array<{ city: string; state: string; isPrimary: boolean }>;
+  paymentMethods: Array<{
+    id: string;
+    name: string;
+    label: string;
+    icon: string | null;
+    isEnabled: boolean;
+  }>;
   recentReviews: Array<{
     rating: number;
     comment: string | null;

@@ -118,6 +118,7 @@ seed-dev: setup-env ## Roda seed do MongoDB (screen_configs, navigation) via Doc
 
 dev-app-up: setup-env ## Sobe o BFF em Docker com hot-reload (requer make dev-infra no domestic-backend-api)
 	@echo "🚀 Subindo BFF em Docker..."
+	@docker rm -f $(BFF_CONTAINER_NAME) 2>/dev/null || true
 	docker-compose -p domestic -f docker-compose.dev.yml up -d --build
 	@echo "✅ BFF → http://localhost:3335"
 

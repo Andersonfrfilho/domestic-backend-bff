@@ -22,10 +22,7 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['./tsconfig.json', './tsconfig.test.json'],
-          defaultProject: './tsconfig.json',
-        },
+        project: ['./tsconfig.json', './tsconfig.test.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -80,11 +77,6 @@ export default tseslint.config(
   },
   {
     files: ['**/*.spec.ts', '**/*.test.ts', '**/*.unit.spec.ts', '**/*.e2e.spec.ts'],
-    languageOptions: {
-      parserOptions: {
-        project: './tsconfig.test.json',
-      },
-    },
     settings: {
       'import/resolver': {
         typescript: {

@@ -1,5 +1,5 @@
 import { LOGGER_PROVIDER } from '@adatechnology/nestjs-logger';
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
@@ -74,6 +74,40 @@ export class ApiClientService {
     }
   }
 
+  private async throwApiError(response: Response, method: string, path: string): Promise<never> {
+    const errorBody = await this.readBody(response);
+
+    let message = `API error ${response.status} on ${method} ${path}`;
+    try {
+      const parsed = JSON.parse(errorBody) as { message?: string };
+      if (parsed.message) message = parsed.message;
+    } catch {
+      /* not JSON — keep default */
+    }
+
+    this.logProvider.warn({
+      message: `API ${method} ${path} returned ${response.status}`,
+      context: `ApiClientService.${method.toLowerCase()}`,
+      meta: { status: response.status, body: errorBody.slice(0, 500) },
+    });
+
+    const httpStatus: HttpStatus = response.status;
+    switch (httpStatus) {
+      case HttpStatus.CONFLICT:
+        throw AppErrorFactory.conflict({ message, code: 'API_CONFLICT' });
+      case HttpStatus.NOT_FOUND:
+        throw AppErrorFactory.notFound({ message, code: 'API_NOT_FOUND' });
+      case HttpStatus.FORBIDDEN:
+        throw AppErrorFactory.authorization({ message });
+      case HttpStatus.BAD_REQUEST:
+        throw AppErrorFactory.validation({ message });
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        throw AppErrorFactory.businessLogic({ message, code: 'API_BUSINESS_LOGIC' });
+      default:
+        throw AppErrorFactory.internalServer({ message });
+    }
+  }
+
   async get<T>({ path, headers }: ApiClientGetParams): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
@@ -85,17 +119,7 @@ export class ApiClientService {
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const errorBody = await this.readBody(response);
-        this.logProvider.warn({
-          message: `API GET ${path} returned ${response.status}`,
-          context: 'ApiClientService.get',
-          meta: { status: response.status, body: errorBody.slice(0, 500) },
-        });
-        throw AppErrorFactory.internalServer({
-          message: `API error ${response.status} on GET ${path}`,
-        });
-      }
+      if (!response.ok) await this.throwApiError(response, 'GET', path);
 
       return this.parseResponse<T>(response);
     } finally {
@@ -116,17 +140,7 @@ export class ApiClientService {
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const errorBody = await this.readBody(response);
-        this.logProvider.warn({
-          message: `API POST ${path} returned ${response.status}`,
-          context: 'ApiClientService.post',
-          meta: { status: response.status, body: errorBody.slice(0, 500) },
-        });
-        throw AppErrorFactory.internalServer({
-          message: `API error ${response.status} on POST ${path}`,
-        });
-      }
+      if (!response.ok) await this.throwApiError(response, 'POST', path);
 
       return this.parseResponse<T>(response);
     } finally {
@@ -147,17 +161,7 @@ export class ApiClientService {
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const errorBody = await this.readBody(response);
-        this.logProvider.warn({
-          message: `API PUT ${path} returned ${response.status}`,
-          context: 'ApiClientService.put',
-          meta: { status: response.status, body: errorBody.slice(0, 500) },
-        });
-        throw AppErrorFactory.internalServer({
-          message: `API error ${response.status} on PUT ${path}`,
-        });
-      }
+      if (!response.ok) await this.throwApiError(response, 'PUT', path);
 
       return this.parseResponse<T>(response);
     } finally {
@@ -170,24 +174,17 @@ export class ApiClientService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
+    const builtHeaders = this.buildHeaders(headers);
+    delete builtHeaders['Content-Type'];
+
     try {
       const response = await fetch(url, {
         method: 'DELETE',
-        headers: this.buildHeaders(headers),
+        headers: builtHeaders,
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const errorBody = await this.readBody(response);
-        this.logProvider.warn({
-          message: `API DELETE ${path} returned ${response.status}`,
-          context: 'ApiClientService.delete',
-          meta: { status: response.status, body: errorBody.slice(0, 500) },
-        });
-        throw AppErrorFactory.internalServer({
-          message: `API error ${response.status} on DELETE ${path}`,
-        });
-      }
+      if (!response.ok) await this.throwApiError(response, 'DELETE', path);
 
       return this.parseResponse<T>(response);
     } finally {

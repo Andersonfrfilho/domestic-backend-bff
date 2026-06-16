@@ -1,10 +1,25 @@
-import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  Req,
+} from '@nestjs/common';
+import { ApiConsumes, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import type { FastifyRequest } from 'fastify';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
 import { AUTH_ERROR_CONFIGS } from '@modules/error/configs/auth-error.config';
+import { DocumentService, UploadedFile } from '@modules/onboarding/document.service';
 import { FieldVerificationService } from '@modules/onboarding/field-verification.service';
 
 import { AccountService } from './account.service';
@@ -37,12 +52,56 @@ class ConfirmContactChangeDto {
   code: string;
 }
 
+class SaveAddressDto {
+  @IsString()
+  @IsNotEmpty()
+  label: string;
+
+  @IsOptional()
+  isPrimary?: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  street: string;
+
+  @IsString()
+  @IsNotEmpty()
+  number: string;
+
+  @IsString()
+  @IsNotEmpty()
+  neighborhood: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @IsString()
+  @IsNotEmpty()
+  postcode: string;
+
+  @IsString()
+  @IsOptional()
+  complement?: string;
+
+  @IsOptional()
+  latitude?: number;
+
+  @IsOptional()
+  longitude?: number;
+}
+
 @ApiTags('Account')
 @Controller('account')
 export class AccountController {
   constructor(
     private readonly accountService: AccountService,
     private readonly fieldVerificationService: FieldVerificationService,
+    private readonly documentService: DocumentService,
   ) {}
 
   @Get('me')
@@ -149,13 +208,138 @@ export class AccountController {
     });
   }
 
+  @Get('me/address')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar endereços do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Lista de endereços.' })
+  @TraceMethod()
+  async listAddresses(@Headers('authorization') authorization: string) {
+    return this.accountService.listAddresses(this.extractKeycloakId(authorization));
+  }
+
+  @Post('me/address')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Adicionar endereço ao usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 201, description: 'Endereço criado.' })
+  @TraceMethod()
+  async createAddress(
+    @Headers('authorization') authorization: string,
+    @Body() body: SaveAddressDto,
+  ) {
+    return this.accountService.createAddress(this.extractKeycloakId(authorization), body);
+  }
+
+  @Put('me/address/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar endereço do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Endereço atualizado.' })
+  @TraceMethod()
+  async updateAddress(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: SaveAddressDto,
+  ) {
+    return this.accountService.updateAddress(this.extractKeycloakId(authorization), id, body);
+  }
+
+  @Delete('me/address/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remover endereço do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 204, description: 'Endereço removido.' })
+  @TraceMethod()
+  async deleteAddress(@Headers('authorization') authorization: string, @Param('id') id: string) {
+    return this.accountService.deleteAddress(this.extractKeycloakId(authorization), id);
+  }
+
+  @Post('me/document')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload de documento do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 201, description: 'Documento enviado.' })
+  @TraceMethod()
+  async uploadDocument(
+    @Headers('authorization') authorization: string,
+    @Req() req: FastifyRequest,
+  ) {
+    const keycloakId = this.extractKeycloakId(authorization);
+
+    let fileBuffer: Buffer | undefined;
+    let filename = 'document';
+    let mimetype = 'application/octet-stream';
+    let documentType = '';
+    let documentNumber: string | undefined;
+
+    for await (const part of req.parts()) {
+      if (part.type === 'file') {
+        fileBuffer = await part.toBuffer();
+        filename = part.filename;
+        mimetype = part.mimetype;
+      } else {
+        if (part.fieldname === 'documentType') documentType = part.value as string;
+        if (part.fieldname === 'documentNumber') documentNumber = part.value as string;
+      }
+    }
+
+    if (!fileBuffer) throw new BadRequestException('Arquivo não enviado');
+
+    const file: UploadedFile = {
+      buffer: fileBuffer,
+      originalname: filename,
+      mimetype,
+      fieldname: 'file',
+      size: fileBuffer.length,
+      encoding: '7bit',
+      destination: '',
+      filename,
+      path: '',
+    };
+
+    return this.documentService.uploadDocument(keycloakId, file, documentType, documentNumber);
+  }
+
+  @Get('me/documents')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar documentos do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Lista de documentos.' })
+  @TraceMethod()
+  async listDocuments(@Headers('authorization') authorization: string) {
+    return this.accountService.listDocuments(this.extractKeycloakId(authorization));
+  }
+
+  @Delete('me/documents/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remover documento do usuário autenticado' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 204, description: 'Documento removido.' })
+  @TraceMethod()
+  async deleteDocument(@Headers('authorization') authorization: string, @Param('id') id: string) {
+    return this.accountService.deleteDocument(this.extractKeycloakId(authorization), id);
+  }
+
+  @Get('me/documents/:id/url')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obter URL assinada de um documento (TTL 15min)' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'URL assinada do documento.' })
+  @TraceMethod()
+  async getDocumentUrl(@Headers('authorization') authorization: string, @Param('id') id: string) {
+    this.extractKeycloakId(authorization);
+    return this.accountService.getDocumentUrl(id);
+  }
+
   private extractKeycloakId(authorization: string | undefined): string {
     const token = authorization?.split(' ')[1];
     if (!token) {
       throw AppErrorFactory.authentication(AUTH_ERROR_CONFIGS.missingAuthorizationHeader());
     }
     try {
-      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const base64 = token.split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
       const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
       if (!payload?.sub) throw new Error('sub ausente no token');
       return payload.sub as string;

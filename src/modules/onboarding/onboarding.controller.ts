@@ -24,7 +24,7 @@ import type { FastifyRequest } from 'fastify';
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 
 import { CepService } from './cep.service';
-import { DocumentService } from './document.service';
+import { DocumentService, UploadedFile } from './document.service';
 import { AddressRequestDto } from './dtos/address-request.dto';
 import { CepResponseDto } from './dtos/cep-response.dto';
 import { FieldVerificationResponseDto } from './dtos/field-verification-response.dto';
@@ -145,6 +145,7 @@ export class OnboardingController {
     let filename = 'document';
     let mimetype = 'application/octet-stream';
     let documentType = '';
+    let documentNumber: string | undefined;
 
     for await (const part of req.parts()) {
       if (part.type === 'file') {
@@ -152,9 +153,8 @@ export class OnboardingController {
         filename = part.filename;
         mimetype = part.mimetype;
       } else {
-        if (part.fieldname === 'documentType') {
-          documentType = part.value as string;
-        }
+        if (part.fieldname === 'documentType') documentType = part.value as string;
+        if (part.fieldname === 'documentNumber') documentNumber = part.value as string;
       }
     }
 
@@ -162,7 +162,7 @@ export class OnboardingController {
       throw new BadRequestException('Arquivo não enviado');
     }
 
-    const file: Express.Multer.File = {
+    const file: UploadedFile = {
       buffer: fileBuffer,
       originalname: filename,
       mimetype,
@@ -172,10 +172,14 @@ export class OnboardingController {
       destination: '',
       filename,
       path: '',
-      stream: undefined as any,
     };
 
-    return this.documentService.uploadDocument(keycloakId || '', file, documentType);
+    return this.documentService.uploadDocument(
+      keycloakId || '',
+      file,
+      documentType,
+      documentNumber,
+    );
   }
 
   @Get('cep/:cep')

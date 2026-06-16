@@ -2,10 +2,25 @@ export interface RequestSummary {
   id: string;
   status: string;
   providerName?: string;
+  providerAvatar?: string;
   contractorName?: string;
   serviceName: string;
+  priceFinal?: number;
+  priceType?: string;
+  priceBase?: number;
+  paymentMethod?: string;
   scheduledAt: string | null;
+  createdAt: string;
   description: string | null;
+  address?: {
+    street: string;
+    number: string;
+    city: string;
+    state: string;
+    neighborhood: string;
+    latitude?: string;
+    longitude?: string;
+  };
 }
 
 export interface ContractorDashboard {

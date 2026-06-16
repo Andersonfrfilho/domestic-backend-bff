@@ -59,12 +59,16 @@ export class ProviderProfileService {
 
     const response: ProviderProfileResponse = {
       id: asString(provider['id']),
-      businessName: asString(provider['business_name']),
+      businessName: asString(provider['businessName'] ?? provider['business_name']),
       description: (provider['description'] as string | null) ?? null,
-      averageRating: Number(provider['average_rating'] ?? 0),
-      reviewCount: Number(provider['review_count'] ?? 0),
-      isAvailable: Boolean(provider['is_available'] ?? false),
-      verificationStatus: asString(provider['verification_status'], 'PENDING'),
+      averageRating: Number(provider['averageRating'] ?? provider['average_rating'] ?? 0),
+      reviewCount: Number(provider['reviewCount'] ?? provider['review_count'] ?? 0),
+      isAvailable: Boolean(provider['isAvailable'] ?? provider['is_available'] ?? false),
+      avatarUrl: (provider['avatarUrl'] ?? provider['avatar_url'] ?? null) as string | null,
+      verificationStatus: asString(
+        provider['verificationStatus'] ?? provider['verification_status'],
+        'PENDING',
+      ),
       services: Array.isArray(provider['services'])
         ? provider['services'].map((s: unknown) => {
             const svc = toRecord(s);
@@ -76,21 +80,39 @@ export class ProviderProfileService {
                 id: asString(category['id']),
                 name: asString(category['name']),
               },
-              priceBase: Number(svc['price_base'] ?? 0),
-              priceType: asString(svc['price_type']),
+              priceBase: Number(svc['priceBase'] ?? svc['price_base'] ?? 0),
+              priceType: asString(svc['priceType'] ?? svc['price_type']),
             };
           })
         : [],
-      workLocations: Array.isArray(provider['work_locations'])
-        ? provider['work_locations'].map((w: unknown) => {
-            const loc = toRecord(w);
-            return {
-              city: asString(loc['city']),
-              state: asString(loc['state']),
-              isPrimary: Boolean(loc['is_primary'] ?? false),
-            };
-          })
-        : [],
+      workLocations: (() => {
+        const locations = provider['workLocations'] ?? provider['work_locations'];
+        return Array.isArray(locations)
+          ? locations.map((w: unknown) => {
+              const loc = toRecord(w);
+              return {
+                city: asString(loc['city']),
+                state: asString(loc['state']),
+                isPrimary: Boolean(loc['isPrimary'] ?? loc['is_primary'] ?? false),
+              };
+            })
+          : [];
+      })(),
+      paymentMethods: (() => {
+        const methods = provider['paymentMethods'] ?? provider['payment_methods'];
+        return Array.isArray(methods)
+          ? methods.map((m: unknown) => {
+              const method = toRecord(m);
+              return {
+                id: asString(method['id']),
+                name: asString(method['name']),
+                label: asString(method['label']),
+                icon: (method['icon'] as string | null) ?? null,
+                isEnabled: Boolean(method['isEnabled'] ?? method['is_enabled'] ?? true),
+              };
+            })
+          : [];
+      })(),
       recentReviews: reviews,
     };
 

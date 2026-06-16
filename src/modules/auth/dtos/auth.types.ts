@@ -40,6 +40,26 @@ export type SelfUnlockVerifyResult = {
   canRetryAt?: string;
 };
 
+export type LoginParams = {
+  username: string;
+  password: string;
+};
+
+export type LoginResult = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  refreshExpiresIn: number;
+};
+
+export type RefreshTokenParams = {
+  refreshToken: string;
+};
+
+export type LogoutParams = {
+  refreshToken: string;
+};
+
 export type ForgotPasswordParams = {
   email: string;
 };
@@ -59,6 +79,40 @@ export type CategoryDto = {
 export type GetCategoriesResult = {
   success: boolean;
   data: CategoryDto[];
+};
+
+export type ServiceDto = {
+  id: string;
+  name: string;
+  categoryId: string;
+  description: string | null;
+};
+
+export type GetServicesResult = {
+  data: ServiceDto[];
+};
+
+export type CreateCategoryParams = {
+  name: string;
+  slug: string;
+};
+
+export type CreateCategoryResult = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type CreateServiceCatalogParams = {
+  name: string;
+  categoryId: string;
+  description?: string;
+};
+
+export type CreateServiceCatalogResult = {
+  id: string;
+  name: string;
+  categoryId: string;
 };
 
 export type ProviderServiceDto = {
@@ -116,12 +170,14 @@ export type ProviderAvailabilityDto = {
   startTime: string;
   endTime: string;
   isActive: boolean;
+  additionalPercentage: number;
 };
 
 export type SetProviderAvailabilityParams = {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  additionalPercentage?: number;
 };
 
 export type SetProviderAvailabilityResult = {
@@ -135,12 +191,57 @@ export type GetProviderAvailabilityResult = {
 };
 
 export type UpdateProviderAvailabilityParams = {
-  dayOfWeek: number;
+  id: string;
   startTime: string;
   endTime: string;
+  additionalPercentage?: number;
 };
 
 export type UpdateProviderAvailabilityResult = {
   success: boolean;
   data: ProviderAvailabilityDto;
+};
+
+export type DeleteProviderAvailabilityResult = {
+  success: boolean;
+};
+
+export type PaymentMethodTypeDto = {
+  id: string;
+  name: string;
+  label: string;
+  icon: string | null;
+};
+
+export type GetPaymentMethodTypesResult = {
+  success: boolean;
+  data: PaymentMethodTypeDto[];
+};
+
+export type ProviderPaymentMethodDto = {
+  id: string;
+  paymentMethodTypeId: string;
+  name: string;
+  label: string;
+  icon: string | null;
+  isEnabled: boolean;
+  details: Record<string, string> | null;
+};
+
+export type GetProviderPaymentMethodsResult = {
+  success: boolean;
+  data: ProviderPaymentMethodDto[];
+};
+
+export type SetProviderPaymentMethodEntry = {
+  paymentMethodTypeId: string;
+  details: Record<string, unknown> | null;
+};
+
+export type SetProviderPaymentMethodsParams = {
+  methods: SetProviderPaymentMethodEntry[];
+};
+
+export type CheckPixKeyAvailabilityResult = {
+  available: boolean;
 };

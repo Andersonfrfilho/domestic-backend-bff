@@ -9,6 +9,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -18,6 +19,10 @@ import { AUTH_ERROR_CONFIGS } from '@modules/error/configs/auth-error.config';
 
 import { AuthService } from './auth.service';
 import type {
+  LoginParams,
+  LoginResult,
+  RefreshTokenParams,
+  LogoutParams,
   SelfUnlockInitiateResult,
   SelfUnlockVerifyResult,
   CreateProviderServiceParams,
@@ -34,6 +39,27 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly termsService: TermsService,
   ) {}
+
+  @Post('token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login ou refresh de token via Keycloak' })
+  @ApiResponse({ status: 200, description: 'Tokens retornados com sucesso.' })
+  @TraceMethod()
+  async token(@Body() body: LoginParams | RefreshTokenParams): Promise<LoginResult> {
+    if ('refreshToken' in body && !('password' in body)) {
+      return this.authService.refreshToken(body);
+    }
+    return this.authService.login(body as LoginParams);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Encerra sessão do usuário no Keycloak' })
+  @ApiResponse({ status: 200, description: 'Logout realizado com sucesso.' })
+  @TraceMethod()
+  async logout(@Body() body: LogoutParams): Promise<void> {
+    await this.authService.logout(body);
+  }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -179,6 +205,35 @@ export class AuthController {
 
   // Provider Profile Endpoints
 
+  @Get('services')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar serviços do catálogo' })
+  @ApiResponse({ status: 200, description: 'Lista de serviços.' })
+  @TraceMethod()
+  async getServices() {
+    return this.authService.getServices();
+  }
+
+  @Post('categories')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar nova categoria' })
+  @ApiResponse({ status: 201, description: 'Categoria criada.' })
+  @TraceMethod()
+  async createCategory(@Body() body: { name: string; slug: string }) {
+    return this.authService.createCategory(body);
+  }
+
+  @Post('services')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar novo serviço no catálogo' })
+  @ApiResponse({ status: 201, description: 'Serviço criado.' })
+  @TraceMethod()
+  async createServiceCatalog(
+    @Body() body: { name: string; categoryId: string; description?: string },
+  ) {
+    return this.authService.createServiceCatalog(body);
+  }
+
   @Get('categories')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Listar categorias de serviços' })
@@ -251,7 +306,8 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Disponibilidade definida.' })
   @TraceMethod()
   async setProviderAvailability(
-    @Body() body: { dayOfWeek: number; startTime: string; endTime: string },
+    @Body()
+    body: { dayOfWeek: number; startTime: string; endTime: string; additionalPercentage?: number },
     @Headers('authorization') authorization: string,
   ) {
     return this.authService.setProviderAvailability(body, this.extractKeycloakId(authorization));
@@ -267,26 +323,87 @@ export class AuthController {
     return this.authService.getProviderAvailability(this.extractKeycloakId(authorization));
   }
 
-  @Put('providers/me/availability/:dayOfWeek')
+  @Put('providers/me/availability/:id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Atualizar disponibilidade do prestador' })
-  @ApiParam({ name: 'dayOfWeek', description: 'Dia da semana (0-6)' })
+  @ApiOperation({ summary: 'Atualizar faixa de disponibilidade do prestador' })
+  @ApiParam({ name: 'id', description: 'ID da faixa de disponibilidade' })
   @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
   @ApiResponse({ status: 200, description: 'Disponibilidade atualizada.' })
   @TraceMethod()
   async updateProviderAvailability(
-    @Param('dayOfWeek') dayOfWeek: string,
-    @Body() body: { startTime: string; endTime: string },
+    @Param('id') id: string,
+    @Body() body: { startTime: string; endTime: string; additionalPercentage?: number },
     @Headers('authorization') authorization: string,
   ) {
     return this.authService.updateProviderAvailability(
       {
-        dayOfWeek: Number(dayOfWeek),
+        id,
         startTime: body.startTime,
         endTime: body.endTime,
+        additionalPercentage: body.additionalPercentage,
       },
       this.extractKeycloakId(authorization),
     );
+  }
+
+  @Delete('providers/me/availability/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remover faixa de disponibilidade do prestador' })
+  @ApiParam({ name: 'id', description: 'ID da faixa de disponibilidade' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Disponibilidade removida.' })
+  @TraceMethod()
+  async deleteProviderAvailability(
+    @Param('id') id: string,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.deleteProviderAvailability(id, this.extractKeycloakId(authorization));
+  }
+
+  @Get('payment-method-types')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar tipos de formas de pagamento disponíveis' })
+  @ApiResponse({ status: 200, description: 'Lista de tipos de pagamento.' })
+  @TraceMethod()
+  async getPaymentMethodTypes() {
+    return this.authService.getPaymentMethodTypes();
+  }
+
+  @Get('providers/me/payment-methods')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar formas de pagamento do prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Formas de pagamento do prestador.' })
+  @TraceMethod()
+  async getProviderPaymentMethods(@Headers('authorization') authorization: string) {
+    return this.authService.getProviderPaymentMethods(this.extractKeycloakId(authorization));
+  }
+
+  @Put('providers/me/payment-methods')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Definir formas de pagamento do prestador' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Formas de pagamento atualizadas.' })
+  @TraceMethod()
+  async setProviderPaymentMethods(
+    @Body()
+    body: { methods: { paymentMethodTypeId: string; details: Record<string, unknown> | null }[] },
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.setProviderPaymentMethods(body, this.extractKeycloakId(authorization));
+  }
+
+  @Get('providers/me/pix-key/check')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar disponibilidade de chave PIX' })
+  @ApiHeader({ name: 'authorization', required: true, description: 'Bearer token JWT' })
+  @ApiResponse({ status: 200, description: 'Resultado da verificação.' })
+  @TraceMethod()
+  async checkPixKeyAvailability(
+    @Query('key') key: string,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.checkPixKeyAvailability(key, this.extractKeycloakId(authorization));
   }
 
   private extractKeycloakId(authorization: string | undefined): string {

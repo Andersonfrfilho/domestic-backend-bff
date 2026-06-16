@@ -3,32 +3,44 @@ import { Injectable, Inject } from '@nestjs/common';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
 import { AppErrorFactory } from '@modules/error/app.error.factory';
-import { ApiClientService } from '@modules/shared/api-client/api-client.service';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
 import { safeJsonParse } from '@modules/shared/utils/safe-json-parse';
 
 import { UploadDocumentResponseDto } from './dtos/upload-document-response.dto';
 import { DocumentServiceInterface } from './interfaces/document-service.interface';
 
+export type UploadedFile = {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  fieldname: string;
+  size: number;
+  encoding: string;
+  destination: string;
+  filename: string;
+  path: string;
+};
+
 @Injectable()
 export class DocumentService implements DocumentServiceInterface {
   constructor(
     @Inject(LOGGER_PROVIDER)
     private readonly logProvider: LogProviderInterface,
-    private readonly apiClient: ApiClientService,
   ) {}
 
   @TraceMethod()
   async uploadDocument(
     keycloakId: string,
-    file: Express.Multer.File,
+    file: UploadedFile,
     documentType: string,
+    documentNumber?: string,
   ): Promise<UploadDocumentResponseDto> {
     try {
       const formData = new FormData();
       const blob = new Blob([file.buffer as BlobPart], { type: file.mimetype });
-      formData.append('file', blob, file.originalname);
       formData.append('documentType', documentType);
+      if (documentNumber) formData.append('documentNumber', documentNumber);
+      formData.append('file', blob, file.originalname);
 
       const url = `${this.getBaseUrl()}/v1/onboarding/documents`;
       const response = await fetch(url, {
@@ -68,7 +80,7 @@ export class DocumentService implements DocumentServiceInterface {
       };
     } catch (error) {
       this.logProvider.error({
-        message: `Failed to upload document for user ${keycloakId}: ${error.message}`,
+        message: `Failed to upload document for user ${keycloakId}: ${(error as Error).message}`,
         context: 'DocumentService.uploadDocument',
       });
       throw AppErrorFactory.internalServer({ message: 'Falha ao enviar documento' });

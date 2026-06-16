@@ -1,5 +1,5 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { ApiHideProperty } from '@nestjs/swagger';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class SearchRequestDto {
   @IsUUID()
@@ -35,6 +35,28 @@ export class SearchRequestDto {
   @IsBoolean()
   @IsOptional()
   available?: boolean;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  priceMin?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  @ApiHideProperty()
+  price_min?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  priceMax?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  @ApiHideProperty()
+  price_max?: number;
 
   @IsNumber()
   @Min(1)

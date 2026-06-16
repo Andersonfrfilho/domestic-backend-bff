@@ -10,6 +10,7 @@ export interface SearchProviderItem {
   latitude: string;
   longitude: string;
   isAvailable: boolean;
+  nextAvailableDate: string | null;
 }
 
 export interface SearchMeta {

@@ -77,6 +77,21 @@ const asString = (value: unknown, fallback = ''): string => {
   return fallback;
 };
 
+function computeNextAvailableDate(activeDays: number[]): string | null {
+  if (!activeDays || activeDays.length === 0) return null;
+  const today = new Date();
+  const todayDow = today.getDay();
+  for (let offset = 0; offset < 7; offset++) {
+    const candidate = (todayDow + offset) % 7;
+    if (activeDays.includes(candidate)) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + offset);
+      return date.toISOString().slice(0, 10);
+    }
+  }
+  return null;
+}
+
 @Injectable()
 export class SearchService {
   constructor(
@@ -153,11 +168,15 @@ export class SearchService {
     const qs = new URLSearchParams();
     const categoryId = params.categoryId ?? params.category_id;
     const ratingMin = params.ratingMin ?? params.rating_min;
+    const priceMin = params.priceMin ?? params.price_min;
+    const priceMax = params.priceMax ?? params.price_max;
     if (categoryId) qs.set('category_id', categoryId);
     if (params.city) qs.set('city', params.city);
     if (params.state) qs.set('state', params.state);
     if (ratingMin !== undefined) qs.set('rating_min', String(ratingMin));
     if (params.available !== undefined) qs.set('available', String(params.available));
+    if (priceMin !== undefined) qs.set('price_min', String(priceMin));
+    if (priceMax !== undefined) qs.set('price_max', String(priceMax));
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
 
@@ -203,6 +222,9 @@ export class SearchService {
       latitude: asString(p['latitude']),
       longitude: asString(p['longitude']),
       isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
+      nextAvailableDate: computeNextAvailableDate(
+        Array.isArray(p['activeDays']) ? (p['activeDays'] as number[]) : [],
+      ),
     }));
 
     const total = rawMeta?.total ?? data.length;

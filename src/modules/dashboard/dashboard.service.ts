@@ -52,10 +52,13 @@ export class DashboardService {
     if (cached) return cached;
 
     const [active, history, unread] = await Promise.all([
-      this.fetchRequests({ path: '/v1/service-requests?status=PENDING,ACCEPTED', headers }),
+      this.fetchRequests({
+        path: '/v1/service-requests?status=PENDING,ACCEPTED',
+        headers: { ...headers, 'X-User-Type': 'CUSTOMER' },
+      }),
       this.fetchRequests({
         path: '/v1/service-requests?status=COMPLETED,CANCELLED&limit=5',
-        headers,
+        headers: { ...headers, 'X-User-Type': 'CUSTOMER' },
       }),
       this.fetchUnreadCount(headers),
     ]);
@@ -80,9 +83,13 @@ export class DashboardService {
     const cached = await this.cache.get<ProviderDashboard>(cacheKey);
     if (cached) return cached;
 
+    const providerHeaders = { ...headers, 'X-User-Type': 'PROVIDER' };
     const [pending, active, providerData, unread] = await Promise.all([
-      this.fetchRequests({ path: '/v1/service-requests?status=PENDING', headers }),
-      this.fetchRequests({ path: '/v1/service-requests?status=ACCEPTED', headers }),
+      this.fetchRequests({ path: '/v1/service-requests?status=PENDING', headers: providerHeaders }),
+      this.fetchRequests({
+        path: '/v1/service-requests?status=ACCEPTED',
+        headers: providerHeaders,
+      }),
       this.fetchProviderStats(headers),
       this.fetchUnreadCount(headers),
     ]);
@@ -110,11 +117,38 @@ export class DashboardService {
       return items.map((r) => ({
         id: asString(r['id']),
         status: asString(r['status']),
-        providerName: r['provider_name'] as string | undefined,
-        contractorName: r['contractor_name'] as string | undefined,
-        serviceName: asString(r['service_name']),
-        scheduledAt: (r['scheduled_at'] as string | null) ?? null,
+        providerName:
+          (r['provider'] as any)?.businessName ?? (r['provider_name'] as string | undefined),
+        providerAvatar: (r['provider'] as any)?.avatarUrl as string | undefined,
+        contractorName:
+          (r['contractor'] as any)?.fullName ?? (r['contractor_name'] as string | undefined),
+        serviceName: asString((r['service'] as any)?.name ?? r['service_name']),
+        priceFinal:
+          r['priceFinal'] != null
+            ? Number(r['priceFinal'])
+            : r['price_final'] != null
+              ? Number(r['price_final'])
+              : undefined,
+        priceType: (r['ps_price_type'] ?? r['price_type']) as string | undefined,
+        priceBase:
+          (r['ps_price_base'] ?? r['price_base']) != null
+            ? Number(r['ps_price_base'] ?? r['price_base'])
+            : undefined,
+        paymentMethod: (r['paymentMethodType'] as any)?.label as string | undefined,
+        scheduledAt: (r['scheduledAt'] ?? r['scheduled_at']) as string | null,
+        createdAt: (r['createdAt'] ?? r['created_at']) as string,
         description: (r['description'] as string | null) ?? null,
+        address: r['address']
+          ? {
+              street: (r['address'] as any).street as string,
+              number: (r['address'] as any).number as string,
+              city: (r['address'] as any).city as string,
+              state: (r['address'] as any).state as string,
+              neighborhood: (r['address'] as any).neighborhood as string,
+              latitude: (r['address'] as any).latitude as string | undefined,
+              longitude: (r['address'] as any).longitude as string | undefined,
+            }
+          : undefined,
       }));
     } catch (err) {
       this.logProvider.warn({
@@ -133,9 +167,12 @@ export class DashboardService {
         headers,
       });
       return {
-        averageRating: Number(data['average_rating'] ?? 0),
-        reviewCount: Number(data['review_count'] ?? 0),
-        verificationStatus: asString(data['verification_status'], 'PENDING'),
+        averageRating: Number(data['averageRating'] ?? data['average_rating'] ?? 0),
+        reviewCount: Number(data['reviewCount'] ?? data['review_count'] ?? 0),
+        verificationStatus: asString(
+          data['verificationStatus'] ?? data['verification_status'],
+          'PENDING',
+        ),
       };
     } catch {
       return { averageRating: 0, reviewCount: 0, verificationStatus: 'PENDING' };
