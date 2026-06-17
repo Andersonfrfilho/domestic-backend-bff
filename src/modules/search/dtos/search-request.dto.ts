@@ -2,6 +2,10 @@ import { ApiHideProperty } from '@nestjs/swagger';
 import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class SearchRequestDto {
+  @IsString()
+  @IsOptional()
+  q?: string;
+
   @IsUUID()
   @IsOptional()
   categoryId?: string;
@@ -68,4 +72,14 @@ export class SearchRequestDto {
   @Max(100)
   @IsOptional()
   limit?: number = 20;
+
+  @IsString()
+  @IsOptional()
+  paymentMethodId?: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(6)
+  @IsOptional()
+  dayOfWeek?: number;
 }

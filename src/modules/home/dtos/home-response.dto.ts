@@ -14,15 +14,17 @@ export interface ProviderService {
 export interface FeaturedProvider {
   id: string;
   businessName: string;
+  avatarUrl: string | null;
   averageRating: number;
   reviewCount: number;
-  /** Shape unificado com search — nome + preço base + tipo de preço */
   services: ProviderService[];
   city: string;
   state: string;
   latitude: string;
   longitude: string;
   isAvailable: boolean;
+  nextAvailableDate: string | null;
+  paymentMethods: Array<{ id: string; name: string; label: string; icon: string | null }>;
 }
 
 export interface ComponentAction {

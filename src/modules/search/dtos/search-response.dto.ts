@@ -1,6 +1,7 @@
 export interface SearchProviderItem {
   id: string;
   businessName: string;
+  avatarUrl: string | null;
   averageRating: number;
   reviewCount: number;
   services: Array<{ name: string; priceBase: number; priceType: string }>;
@@ -11,6 +12,7 @@ export interface SearchProviderItem {
   longitude: string;
   isAvailable: boolean;
   nextAvailableDate: string | null;
+  paymentMethods: Array<{ id: string; name: string; label: string; icon: string | null }>;
 }
 
 export interface SearchMeta {
@@ -18,6 +20,7 @@ export interface SearchMeta {
   limit: number;
   total: number;
   totalPages: number;
+  priceRange: { min: number; max: number };
 }
 
 export interface PaginationLinks {
@@ -53,11 +56,10 @@ export interface SearchLayoutComponent {
 }
 
 export interface SearchResponseDto {
-  /** Layout dinâmico dos filtros e resultados (SDUI) */
   layout: SearchLayoutComponent[];
-  /** Filtros configurados dinamicamente */
   filters: SearchFilter[];
   data: SearchProviderItem[];
   meta: SearchMeta;
   links: PaginationLinks;
+  paymentMethodTypes: Array<{ id: string; name: string; label: string; icon: string | null }>;
 }

@@ -406,6 +406,78 @@ export class AuthController {
     return this.authService.checkPixKeyAvailability(key, this.extractKeycloakId(authorization));
   }
 
+  @Get('providers/me/profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Perfil profissional do prestador logado' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  getMyProviderProfile(@Headers('authorization') authorization: string) {
+    return this.authService.getMyProviderProfile(this.extractKeycloakId(authorization));
+  }
+
+  @Put('providers/me/profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar bio, nome comercial e disponibilidade' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  updateMyProviderProfile(
+    @Body() body: { businessName?: string; description?: string; isAvailable?: boolean },
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.updateMyProviderProfile(body, this.extractKeycloakId(authorization));
+  }
+
+  @Get('providers/me/work-locations')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar localizações de atendimento' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  getWorkLocations(@Headers('authorization') authorization: string) {
+    return this.authService.getWorkLocations(this.extractKeycloakId(authorization));
+  }
+
+  @Post('providers/me/work-locations')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Adicionar localização de atendimento' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  addWorkLocation(
+    @Body() body: { addressId: string; name?: string; isPrimary?: boolean },
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.addWorkLocation(body, this.extractKeycloakId(authorization));
+  }
+
+  @Delete('providers/me/work-locations/:locationId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remover localização de atendimento' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  removeWorkLocation(
+    @Param('locationId') locationId: string,
+    @Headers('authorization') authorization: string,
+  ) {
+    return this.authService.removeWorkLocation(locationId, this.extractKeycloakId(authorization));
+  }
+
+  @Get('providers/me/verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Status de verificação de cadastro' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  getMyVerification(@Headers('authorization') authorization: string) {
+    return this.authService.getMyVerification(this.extractKeycloakId(authorization));
+  }
+
+  @Post('providers/me/verification/submit')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar revisão de cadastro' })
+  @ApiHeader({ name: 'authorization', required: true })
+  @TraceMethod()
+  submitMyVerification(@Headers('authorization') authorization: string) {
+    return this.authService.submitMyVerification(this.extractKeycloakId(authorization));
+  }
+
   private extractKeycloakId(authorization: string | undefined): string {
     const token = authorization?.split(' ')[1];
     if (!token) {

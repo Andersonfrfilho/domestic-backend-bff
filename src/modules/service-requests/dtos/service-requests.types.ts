@@ -12,11 +12,12 @@ export type ServiceRequestResult = {
   description?: string;
   scheduledAt?: string;
   priceFinal?: number;
+  estimatedHours?: number | null;
   createdAt: string;
   updatedAt?: string;
   paymentMethodTypeId?: string;
   service?: { id: string; name: string };
-  provider?: { id: string; businessName: string };
+  provider?: { id: string; businessName: string; avatarUrl?: string | null };
   paymentMethodType?: { id: string; name: string; label: string };
   address?: {
     id: string;
@@ -38,6 +39,7 @@ export type CreateServiceRequestParams = {
   scheduledAt?: string;
   priceFinal?: number;
   paymentMethodTypeId?: string;
+  estimatedHours?: number;
 };
 
 export type UserType = 'CUSTOMER' | 'PROVIDER';

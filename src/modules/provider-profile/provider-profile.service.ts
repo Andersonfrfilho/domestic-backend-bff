@@ -14,6 +14,8 @@ import type {
   FetchProviderResult,
   FetchReviewsParams,
   FetchReviewsResult,
+  GetBusySlotsParams,
+  GetBusySlotsResult,
   GetProfileParams,
   GetProfileResult,
   ProviderProfileResponse,
@@ -73,6 +75,8 @@ export class ProviderProfileService {
         ? provider['services'].map((s: unknown) => {
             const svc = toRecord(s);
             const category = toRecord(svc['category']);
+            const rawDuration =
+              svc['estimatedDurationMinutes'] ?? svc['estimated_duration_minutes'];
             return {
               id: asString(svc['id']),
               name: asString(svc['name']),
@@ -82,6 +86,8 @@ export class ProviderProfileService {
               },
               priceBase: Number(svc['priceBase'] ?? svc['price_base'] ?? 0),
               priceType: asString(svc['priceType'] ?? svc['price_type']),
+              estimatedDurationMinutes:
+                rawDuration != null && rawDuration !== '' ? Number(rawDuration) : null,
             };
           })
         : [],
@@ -114,12 +120,46 @@ export class ProviderProfileService {
           : [];
       })(),
       recentReviews: reviews,
+      availability: (() => {
+        const slots = provider['availability'];
+        return Array.isArray(slots)
+          ? slots.map((s: unknown) => {
+              const slot = toRecord(s);
+              return {
+                dayOfWeek: Number(slot['dayOfWeek'] ?? slot['day_of_week'] ?? 0),
+                startTime: asString(slot['startTime'] ?? slot['start_time']),
+                endTime: asString(slot['endTime'] ?? slot['end_time']),
+              };
+            })
+          : [];
+      })(),
     };
 
     const ttl = Number(process.env.CACHE_TTL_PROVIDER_PROFILE ?? 180);
     await this.cache.set({ key: cacheKey, value: response, ttlSeconds: ttl });
 
     return response;
+  }
+
+  @TraceMethod()
+  async getBusySlots({ providerId, date, headers }: GetBusySlotsParams): GetBusySlotsResult {
+    try {
+      const rows = await this.api.get<{ scheduledAt: string; estimatedHours: number }[]>({
+        path: `/v1/service-requests/busy-slots?providerId=${providerId}&date=${date}`,
+        headers,
+      });
+      return (rows ?? []).map((row) => ({
+        scheduledAt: row.scheduledAt,
+        estimatedHours: Number(row.estimatedHours),
+      }));
+    } catch (err) {
+      const errMsg = err instanceof Error ? `: ${err.message}` : '';
+      this.logProvider.warn({
+        message: `Failed to fetch busy slots for provider ${providerId} on ${date}${errMsg}`,
+        context: 'ProviderProfileService.getBusySlots',
+      });
+      return [];
+    }
   }
 
   private async fetchProvider({ id, headers }: FetchProviderParams): FetchProviderResult {

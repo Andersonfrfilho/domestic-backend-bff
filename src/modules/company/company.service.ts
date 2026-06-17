@@ -41,4 +41,19 @@ export class CompanyService {
       body,
     });
   }
+
+  async updateCompany(companyId: string, body: {
+    companyName?: string;
+    tradeName?: string | null;
+    email?: string;
+    phone?: string;
+    stateRegistration?: string | null;
+    municipalRegistration?: string | null;
+  }, keycloakId: string) {
+    return this.apiClient.put({
+      path: `/companies/${companyId}`,
+      body,
+      headers: { 'X-User-Id': keycloakId },
+    });
+  }
 }

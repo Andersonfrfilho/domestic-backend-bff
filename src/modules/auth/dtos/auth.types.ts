@@ -245,3 +245,42 @@ export type SetProviderPaymentMethodsParams = {
 export type CheckPixKeyAvailabilityResult = {
   available: boolean;
 };
+
+export type ProviderProfileMeResult = {
+  id: string;
+  businessName: string | null;
+  description: string | null;
+  isAvailable: boolean;
+  avatarUrl: string | null;
+  averageRating: number | null;
+};
+
+export type UpdateProviderProfileBody = {
+  businessName?: string;
+  description?: string;
+  isAvailable?: boolean;
+};
+
+export type WorkLocationDto = {
+  id: string;
+  addressId: string;
+  name: string | null;
+  isPrimary: boolean;
+  city: string;
+  state: string;
+  street: string;
+  neighborhood: string | null;
+};
+
+export type AddWorkLocationBody = {
+  addressId: string;
+  name?: string;
+  isPrimary?: boolean;
+};
+
+export type ProviderVerificationResult = {
+  status: string | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+};

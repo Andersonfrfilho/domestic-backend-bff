@@ -41,6 +41,11 @@ import {
   type GetProviderPaymentMethodsResult,
   type SetProviderPaymentMethodsParams,
   type CheckPixKeyAvailabilityResult,
+  type ProviderProfileMeResult,
+  type UpdateProviderProfileBody,
+  type WorkLocationDto,
+  type AddWorkLocationBody,
+  type ProviderVerificationResult,
 } from './dtos/auth.types';
 
 @Injectable()
@@ -130,7 +135,7 @@ export class AuthService {
   async getVerificationStatus(keycloakId: string): Promise<VerificationStatusResult> {
     try {
       const response = await this.api.get<VerificationStatusResult>({
-        path: '/v1/users/me/verification-status',
+        path: '/v1/users/me/onboarding-status',
         headers: { 'X-User-Id': keycloakId },
       });
       return response;
@@ -566,6 +571,124 @@ export class AuthService {
       this.logProvider.error({
         message: `Error checking PIX key availability: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context: 'AuthService.checkPixKeyAvailability',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getMyProviderProfile(keycloakId: string): Promise<ProviderProfileMeResult> {
+    try {
+      return await this.api.get<ProviderProfileMeResult>({
+        path: '/v1/auth/providers/me/profile',
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting provider profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getMyProviderProfile',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async updateMyProviderProfile(
+    body: UpdateProviderProfileBody,
+    keycloakId: string,
+  ): Promise<ProviderProfileMeResult> {
+    try {
+      return await this.api.put<ProviderProfileMeResult>({
+        path: '/v1/auth/providers/me/profile',
+        body,
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error updating provider profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.updateMyProviderProfile',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getWorkLocations(keycloakId: string): Promise<WorkLocationDto[]> {
+    try {
+      return await this.api.get<WorkLocationDto[]>({
+        path: '/v1/auth/providers/me/work-locations',
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting work locations: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getWorkLocations',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async addWorkLocation(body: AddWorkLocationBody, keycloakId: string): Promise<WorkLocationDto> {
+    try {
+      return await this.api.post<WorkLocationDto>({
+        path: '/v1/auth/providers/me/work-locations',
+        body,
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error adding work location: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.addWorkLocation',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async removeWorkLocation(locationId: string, keycloakId: string): Promise<void> {
+    try {
+      await this.api.delete({
+        path: `/v1/auth/providers/me/work-locations/${locationId}`,
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error removing work location ${locationId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.removeWorkLocation',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async getMyVerification(keycloakId: string): Promise<ProviderVerificationResult> {
+    try {
+      return await this.api.get<ProviderVerificationResult>({
+        path: '/v1/auth/providers/me/verification',
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error getting verification status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.getMyVerification',
+      });
+      throw error;
+    }
+  }
+
+  @TraceMethod()
+  async submitMyVerification(keycloakId: string): Promise<ProviderVerificationResult> {
+    try {
+      return await this.api.post<ProviderVerificationResult>({
+        path: '/v1/auth/providers/me/verification/submit',
+        body: {},
+        headers: { 'X-User-Id': keycloakId },
+      });
+    } catch (error) {
+      this.logProvider.error({
+        message: `Error submitting verification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        context: 'AuthService.submitMyVerification',
       });
       throw error;
     }

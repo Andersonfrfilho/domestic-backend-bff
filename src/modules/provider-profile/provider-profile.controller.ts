@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Inject, Param } from '@nestjs/common';
+import { Controller, Get, Headers, Inject, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { TraceMethod } from '@app/shared/decorators/trace-method.decorator';
@@ -84,5 +84,17 @@ export class ProviderProfileController {
   @TraceMethod()
   getProfile(@Param('id') id: string, @Headers() headers: Record<string, string>) {
     return this.service.getProfile({ providerId: id, headers });
+  }
+
+  @Get(':id/busy-slots')
+  @ApiOperation({ summary: 'Horários ocupados do prestador em uma data' })
+  @ApiParam({ name: 'id', description: 'UUID do prestador' })
+  @TraceMethod()
+  getBusySlots(
+    @Param('id') id: string,
+    @Query('date') date: string,
+    @Headers() headers: Record<string, string>,
+  ) {
+    return this.service.getBusySlots({ providerId: id, date, headers });
   }
 }

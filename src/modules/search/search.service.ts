@@ -10,8 +10,24 @@ import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import {
+  getAuthorization,
+  getXAccessToken,
+} from '@modules/shared/request-context/request-context';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
 import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
+import { computeNextAvailableDate } from '@modules/shared/utils/next-available-date';
+
+function extractKeycloakIdFromContext(): string | undefined {
+  const token = getXAccessToken() ?? getAuthorization()?.replace(/^bearer\s+/i, '');
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()) as Record<string, unknown>;
+    return typeof payload['sub'] === 'string' ? payload['sub'] : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 import type { SearchRequestDto } from './dtos/search-request.dto';
 import type {
@@ -26,7 +42,7 @@ const DEFAULT_FILTERS: SearchFilter[] = [
     id: 'category',
     label: 'Categoria',
     type: 'select',
-    param: 'category_id',
+    param: 'categoryId',
     config: { placeholder: 'Selecione uma categoria' },
   },
   {
@@ -40,7 +56,7 @@ const DEFAULT_FILTERS: SearchFilter[] = [
     id: 'rating',
     label: 'Avaliação mínima',
     type: 'range',
-    param: 'rating_min',
+    param: 'ratingMin',
     config: { min: 1, max: 5, step: 0.5 },
   },
   {
@@ -49,6 +65,37 @@ const DEFAULT_FILTERS: SearchFilter[] = [
     type: 'boolean',
     param: 'available',
     config: {},
+  },
+  {
+    id: 'payment_method',
+    label: 'Forma de pagamento',
+    type: 'chips',
+    param: 'paymentMethodId',
+    options: [],
+    config: {},
+  },
+  {
+    id: 'day_of_week',
+    label: 'Dia da semana',
+    type: 'chips',
+    param: 'dayOfWeek',
+    options: [
+      { value: '0', label: 'Dom' },
+      { value: '1', label: 'Seg' },
+      { value: '2', label: 'Ter' },
+      { value: '3', label: 'Qua' },
+      { value: '4', label: 'Qui' },
+      { value: '5', label: 'Sex' },
+      { value: '6', label: 'Sáb' },
+    ],
+    config: {},
+  },
+  {
+    id: 'price_range',
+    label: 'Faixa de preço',
+    type: 'range',
+    param: 'priceMin',
+    config: { min: 0, max: 1000, step: 10 },
   },
 ];
 
@@ -77,21 +124,6 @@ const asString = (value: unknown, fallback = ''): string => {
   return fallback;
 };
 
-function computeNextAvailableDate(activeDays: number[]): string | null {
-  if (!activeDays || activeDays.length === 0) return null;
-  const today = new Date();
-  const todayDow = today.getDay();
-  for (let offset = 0; offset < 7; offset++) {
-    const candidate = (todayDow + offset) % 7;
-    if (activeDays.includes(candidate)) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + offset);
-      return date.toISOString().slice(0, 10);
-    }
-  }
-  return null;
-}
-
 @Injectable()
 export class SearchService {
   constructor(
@@ -111,16 +143,19 @@ export class SearchService {
     const cached = await this.cache.get<SearchResponseDto>(cacheKey);
     if (cached) return cached;
 
-    const [apiResult, screenCfgResult] = await Promise.allSettled([
+    const [apiResult, screenCfgResult, paymentMethodTypesResult] = await Promise.allSettled([
       this.fetchProviders(params),
       this.screenConfig.getActiveScreen('search'),
+      this.fetchPaymentMethodTypes(),
     ]);
 
     const apiData =
       apiResult.status === 'fulfilled'
         ? apiResult.value
-        : { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+        : { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0, priceRange: { min: 0, max: 1000 } } };
     const screenCfg = screenCfgResult.status === 'fulfilled' ? screenCfgResult.value : null;
+    const paymentMethodTypes =
+      paymentMethodTypesResult.status === 'fulfilled' ? paymentMethodTypesResult.value : [];
 
     if (apiResult.status === 'rejected') {
       this.logProvider.warn({
@@ -148,7 +183,12 @@ export class SearchService {
           }))
       : DEFAULT_LAYOUT;
 
-    const filters = DEFAULT_FILTERS;
+    const filters: SearchFilter[] = DEFAULT_FILTERS.map((f) => {
+      if (f.id === 'payment_method' && paymentMethodTypes.length > 0) {
+        return { ...f, options: paymentMethodTypes.map((pm) => ({ value: pm.id, label: pm.label })) };
+      }
+      return f;
+    });
 
     const response: SearchResponseDto = {
       layout,
@@ -156,6 +196,7 @@ export class SearchService {
       data: apiData.data,
       meta: apiData.meta,
       links: { first: null, last: null, next: null, previous: null },
+      paymentMethodTypes,
     };
 
     const ttl = Number(process.env.CACHE_TTL_SEARCH ?? 120);
@@ -170,6 +211,7 @@ export class SearchService {
     const ratingMin = params.ratingMin ?? params.rating_min;
     const priceMin = params.priceMin ?? params.price_min;
     const priceMax = params.priceMax ?? params.price_max;
+    if (params.q) qs.set('q', params.q);
     if (categoryId) qs.set('category_id', categoryId);
     if (params.city) qs.set('city', params.city);
     if (params.state) qs.set('state', params.state);
@@ -177,8 +219,12 @@ export class SearchService {
     if (params.available !== undefined) qs.set('available', String(params.available));
     if (priceMin !== undefined) qs.set('price_min', String(priceMin));
     if (priceMax !== undefined) qs.set('price_max', String(priceMax));
+    if (params.paymentMethodId) qs.set('payment_method_id', params.paymentMethodId);
+    if (params.dayOfWeek !== undefined) qs.set('day_of_week', String(params.dayOfWeek));
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
+    const callerKeycloakId = extractKeycloakIdFromContext();
+    if (callerKeycloakId) qs.set('exclude_keycloak_id', callerKeycloakId);
 
     const raw = await this.api.get<
       | Record<string, unknown>[]
@@ -196,6 +242,7 @@ export class SearchService {
     const data: SearchProviderItem[] = items.map((p) => ({
       id: asString(p['id']),
       businessName: asString(p['business_name'] ?? p['businessName']),
+      avatarUrl: asString(p['avatar_url'] ?? p['avatarUrl']) || null,
       averageRating: Number(p['average_rating'] ?? p['averageRating'] ?? 0),
       reviewCount: Number(p['review_count'] ?? p['reviewCount'] ?? 0),
       services: Array.isArray(p['services'])
@@ -225,7 +272,21 @@ export class SearchService {
       nextAvailableDate: computeNextAvailableDate(
         Array.isArray(p['activeDays']) ? (p['activeDays'] as number[]) : [],
       ),
+      paymentMethods: Array.isArray(p['paymentMethods'])
+        ? (p['paymentMethods'] as Record<string, unknown>[]).map((pm) => ({
+            id: asString(pm['id']),
+            name: asString(pm['name']),
+            label: asString(pm['label']),
+            icon: pm['icon'] ? asString(pm['icon']) : null,
+          }))
+        : [],
     }));
+
+    const prices = data.flatMap((p) => p.services.map((s) => s.priceBase)).filter((v) => v > 0);
+    const priceRange = {
+      min: prices.length > 0 ? Math.min(...prices) : 0,
+      max: prices.length > 0 ? Math.max(...prices) : 1000,
+    };
 
     const total = rawMeta?.total ?? data.length;
     const limit = params.limit ?? 20;
@@ -234,9 +295,24 @@ export class SearchService {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      priceRange,
     };
 
     return { data, meta };
+  }
+
+  private async fetchPaymentMethodTypes(): Promise<Array<{ id: string; name: string; label: string; icon: string | null }>> {
+    const raw = await this.api.get<unknown[]>({ path: '/v1/providers/payment-method-types' });
+    if (!Array.isArray(raw)) return [];
+    return raw.map((item) => {
+      const pm = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
+      return {
+        id: asString(pm['id']),
+        name: asString(pm['name']),
+        label: asString(pm['label']),
+        icon: pm['icon'] ? asString(pm['icon']) : null,
+      };
+    });
   }
 
   private hashParams(params: SearchRequestDto): string {

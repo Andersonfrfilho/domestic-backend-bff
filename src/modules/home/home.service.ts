@@ -10,8 +10,24 @@ import { BffCacheService } from '@modules/shared/cache/bff-cache.service';
 import { BFF_CACHE_SERVICE } from '@modules/shared/cache/bff-cache.token';
 import { CACHE_KEYS } from '@modules/shared/constants/cache-keys.constant';
 import type { LogProviderInterface } from '@modules/shared/interfaces/log.interface';
+import {
+  getAuthorization,
+  getXAccessToken,
+} from '@modules/shared/request-context/request-context';
 import { ScreenConfigService } from '@modules/shared/screen/screen-config.service';
 import { SCREEN_CONFIG_SERVICE } from '@modules/shared/screen/screen-config.token';
+import { computeNextAvailableDate } from '@modules/shared/utils/next-available-date';
+
+function extractKeycloakIdFromContext(): string | undefined {
+  const token = getXAccessToken() ?? getAuthorization()?.replace(/^bearer\s+/i, '');
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()) as Record<string, unknown>;
+    return typeof payload['sub'] === 'string' ? payload['sub'] : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 import type {
   FeaturedCategory,
@@ -47,6 +63,7 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
   {
     id: 'demo-1',
     businessName: 'Maria Serviços Domésticos',
+    avatarUrl: null,
     averageRating: 4.9,
     reviewCount: 127,
     services: [
@@ -58,10 +75,13 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     latitude: '-23.550520',
     longitude: '-46.633308',
     isAvailable: true,
+    nextAvailableDate: null,
+    paymentMethods: [],
   },
   {
     id: 'demo-2',
     businessName: 'João Eletricista',
+    avatarUrl: null,
     averageRating: 4.7,
     reviewCount: 89,
     services: [
@@ -73,10 +93,13 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     latitude: '-23.550520',
     longitude: '-46.633308',
     isAvailable: true,
+    nextAvailableDate: null,
+    paymentMethods: [],
   },
   {
     id: 'demo-3',
     businessName: 'Carlos Encanador',
+    avatarUrl: null,
     averageRating: 4.8,
     reviewCount: 64,
     services: [
@@ -88,6 +111,8 @@ const FALLBACK_PROVIDERS: FeaturedProvider[] = [
     latitude: '-23.462778',
     longitude: '-46.533333',
     isAvailable: true,
+    nextAvailableDate: null,
+    paymentMethods: [],
   },
 ];
 
@@ -165,7 +190,7 @@ export class HomeService {
       providers = FALLBACK_PROVIDERS;
     }
 
-    const layout: ScreenComponentData[] = screenCfg
+    const resolvedFromMongo: ScreenComponentData[] | null = screenCfg
       ? screenCfg.components
           .filter((c) => c.visible)
           .sort((a, b) => a.order - b.order)
@@ -180,7 +205,11 @@ export class HomeService {
               data: { categories, providers },
             }),
           }))
-      : this.defaultLayout({ categories, providers });
+      : null;
+
+    const allEmpty = resolvedFromMongo?.every((c) => (c.data as unknown[]).length === 0) ?? true;
+    const layout: ScreenComponentData[] =
+      resolvedFromMongo && !allEmpty ? resolvedFromMongo : this.defaultLayout({ categories, providers });
 
     const response: HomeResponseDto = {
       layout,
@@ -210,31 +239,45 @@ export class HomeService {
   }
 
   private async fetchFeaturedProviders(): Promise<FeaturedProvider[]> {
+    const callerKeycloakId = extractKeycloakIdFromContext();
+    const excludeParam = callerKeycloakId ? `&exclude_keycloak_id=${encodeURIComponent(callerKeycloakId)}` : '';
     const data = await this.api.get<{ data?: unknown[] } | unknown[]>({
-      path: '/v1/providers?sort=rating&limit=10&available=true',
+      path: `/v1/providers?sort=rating&limit=10&available=true${excludeParam}`,
     });
     const items = Array.isArray(data) ? data : (data.data ?? []);
-    return (items as Record<string, unknown>[]).map((p) => ({
-      id: asString(p['id']),
-      businessName: asString(p['business_name'] ?? p['businessName']),
-      averageRating: Number(p['average_rating'] ?? p['averageRating'] ?? 0),
-      reviewCount: Number(p['review_count'] ?? p['reviewCount'] ?? 0),
-      services: Array.isArray(p['services'])
-        ? p['services'].map((s: unknown) => {
-            const svc = (typeof s === 'object' && s !== null ? s : {}) as Record<string, unknown>;
-            return {
-              name: asString(svc['name'] ?? svc['service_name'] ?? svc['serviceName'] ?? s),
-              priceBase: Number(svc['price_base'] ?? svc['priceBase'] ?? 0),
-              priceType: asString(svc['price_type'] ?? svc['priceType'] ?? 'FIXED'),
-            };
-          })
-        : [],
-      city: asString(p['city']),
-      state: asString(p['state']),
-      latitude: asString(p['latitude']),
-      longitude: asString(p['longitude']),
-      isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
-    }));
+
+    return (items as Record<string, unknown>[])
+      .filter((p) => asString(p['id']))
+      .map((p) => ({
+        id: asString(p['id']),
+        businessName: asString(p['business_name'] ?? p['businessName']),
+        avatarUrl: asString(p['avatar_url'] ?? p['avatarUrl']) || null,
+        averageRating: Number(p['average_rating'] ?? p['averageRating'] ?? 0),
+        reviewCount: Number(p['review_count'] ?? p['reviewCount'] ?? 0),
+        services: Array.isArray(p['services'])
+          ? (p['services'] as Record<string, unknown>[]).map((s) => ({
+              name: asString(s['name'] ?? s['service_name']),
+              priceBase: Number(s['priceBase'] ?? s['price_base'] ?? 0),
+              priceType: asString(s['priceType'] ?? s['price_type'] ?? 'FIXED'),
+            }))
+          : [],
+        city: asString(p['city']),
+        state: asString(p['state']),
+        latitude: asString(p['latitude']),
+        longitude: asString(p['longitude']),
+        isAvailable: Boolean(p['is_available'] ?? p['isAvailable'] ?? false),
+        nextAvailableDate: computeNextAvailableDate(
+          Array.isArray(p['activeDays']) ? (p['activeDays'] as number[]) : [],
+        ),
+        paymentMethods: Array.isArray(p['paymentMethods'])
+          ? (p['paymentMethods'] as Record<string, unknown>[]).map((pm) => ({
+              id: asString(pm['id']),
+              name: asString(pm['name']),
+              label: asString(pm['label']),
+              icon: pm['icon'] ? asString(pm['icon']) : null,
+            }))
+          : [],
+      }));
   }
 
   private resolveDataSource({ source, data }: ResolveDataSourceParams): ResolveDataSourceResult {

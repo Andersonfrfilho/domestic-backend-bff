@@ -29,6 +29,10 @@ export class DeviceTokensController {
   @ApiAlternativeErrorResponses({ badRequest: true, unauthorized: true })
   @TraceMethod()
   register(@Body() body: unknown, @Headers() headers: Record<string, string>) {
-    return this.api.post({ path: '/v1/device-tokens', body, headers });
+    const SKIP = new Set(['content-type', 'content-length', 'host', 'x-request-id', 'accept-encoding']);
+    const forwardedHeaders = Object.fromEntries(
+      Object.entries(headers).filter(([key]) => !SKIP.has(key.toLowerCase())),
+    );
+    return this.api.post({ path: '/v1/device-tokens', body, headers: forwardedHeaders });
   }
 }

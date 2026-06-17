@@ -261,9 +261,19 @@ export class OnboardingController {
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
   @TraceMethod()
   async getOnboardingStatus(
-    @Headers('x-user-id') keycloakId: string,
+    @Headers('x-user-id') keycloakIdHeader: string | undefined,
     @Headers('authorization') authorization?: string,
   ): Promise<OnboardingStatusResponseDto> {
+    let keycloakId = keycloakIdHeader;
+    if (!keycloakId && authorization) {
+      try {
+        const token = authorization.replace(/^Bearer\s+/i, '');
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()) as Record<string, unknown>;
+        keycloakId = typeof payload['sub'] === 'string' ? payload['sub'] : undefined;
+      } catch {
+        keycloakId = undefined;
+      }
+    }
     if (!keycloakId) {
       throw new UnauthorizedException('x-user-id header ausente');
     }

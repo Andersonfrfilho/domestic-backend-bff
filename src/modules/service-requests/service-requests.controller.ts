@@ -54,6 +54,11 @@ class CreateServiceRequestDto {
   @IsUUID()
   @IsOptional()
   paymentMethodTypeId?: string;
+
+  @IsNumber()
+  @Min(0.5)
+  @IsOptional()
+  estimatedHours?: number;
 }
 
 @ApiTags('Service Requests')
